@@ -134,14 +134,14 @@ class DisparityRefinment(nn.Module):
         
         self.scale = pow(2, k)
 
-        self.upsample = nn.Sequential(*[CNNBlockT(1, 1, kernel_size=5, stride=2, padding=2, output_padding=1) for _ in range(k)])
+        # self.upsample = nn.Sequential(*[CNNBlockT(1, 1, kernel_size=5, stride=2, padding=2, output_padding=1) for _ in range(k)])
         # self.upsample = nn.Upsample(scale_factor=pow(2, k), mode='bilinear', align_corners=False)
         self.conv =  nn.Conv2d(1, 1, kernel_size=3, stride=1, padding=1)
 
     def forward(self, x):
-        r = F.interpolate(x, scale_factor=self.scale, mode='bilinear', align_corners=False)
-        y = self.upsample(x)
-        return r + self.conv(y)
+        x = F.interpolate(x, scale_factor=self.scale, mode='bilinear', align_corners=False)
+        # y = self.upsample(x)
+        return self.conv(x)
 
 
 class Model(nn.Module):
