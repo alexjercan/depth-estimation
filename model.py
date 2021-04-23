@@ -3,11 +3,12 @@
 # Developed by Alex Jercan <jercan_alex27@yahoo.com>
 #
 # References:
-#
+# - https://arxiv.org/pdf/2003.14299.pdf
+# - https://arxiv.org/pdf/1807.08865.pdf
+# - https://github.com/meteorshowers/StereoNet-ActiveStereoNet
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 from cat_fms import cat_fms
 from soft_argmin import FasterSoftArgmin
@@ -76,7 +77,6 @@ class ResBlock(nn.Module):
 class FeatureExtraction(nn.Module):
     def __init__(self, k):
         super().__init__()
-
         self.k = k
         in_channel = 3
         out_channel = 32
@@ -103,9 +103,9 @@ class FeatureExtraction(nn.Module):
 class CostFilter(nn.Module):
     def __init__(self):
         super().__init__()
-
         in_channel = 64
         out_channel = 32
+
         filters = []
         for _ in range(4):
             filters.append(CNNBlock3D(in_channel, out_channel,
@@ -121,6 +121,18 @@ class CostFilter(nn.Module):
         return self.conv3d(x)
 
 
+class DisparityRefinment(nn.Module):
+    def __init__(self, k):
+        super().__init__()
+        self.conv1 = CNNBlock(1, 1, kernel_size=3, stride=1, padding=1)
+        self.upsample = nn.Upsample(scale_factor=pow(2, k),
+                                    mode='bilinear', align_corners=False)
+
+    def forward(self, x):
+        x = self.conv1(x)
+        return self.upsample(x)
+
+
 class Model(nn.Module):
     def __init__(self, k=3, maxdisp=192):
         super().__init__()
@@ -128,6 +140,7 @@ class Model(nn.Module):
         self.feature = FeatureExtraction(k)
         self.filter = CostFilter()
         self.predict = FasterSoftArgmin(self.maxdisp)
+        self.refine = DisparityRefinment(k)
 
     def forward(self, left_image, right_image):
         ref_fm = self.feature(left_image)
@@ -138,6 +151,7 @@ class Model(nn.Module):
         cost = torch.squeeze(cost, 1)
 
         disp = self.predict(cost)
+        disp = self.refine(disp)
 
         return disp
 
