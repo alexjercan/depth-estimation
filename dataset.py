@@ -54,7 +54,12 @@ class BDataset(Dataset):
 
     def __transform__(self, data):
         left_img, right_img, left_depth, right_depth = data
-
+        
+        left_img = left_img.transpose(2, 0, 1)
+        right_img = right_img.transpose(2, 0, 1)
+        left_depth = left_depth.transpose(2, 0, 1)
+        right_depth = right_depth.transpose(2, 0, 1)
+        
         return torch.from_numpy(left_img), torch.from_numpy(right_img), torch.from_numpy(left_depth), torch.from_numpy(right_depth)
 
 
@@ -63,6 +68,6 @@ if __name__ == "__main__":
     left_imgs, right_imgs, left_depths, right_depths = next(iter(dataloader))
     assert left_imgs.shape == right_imgs.shape, "dataset error"
     assert left_depths.shape == right_depths.shape, "dataset error"
-    assert left_imgs.shape == (2, 256, 256, 3), "dataset error"
-    assert left_depths.shape == (2, 256, 256, 1), "dataset error"
+    assert left_imgs.shape == (2, 3, 256, 256), "dataset error"
+    assert left_depths.shape == (2, 1, 256, 256), "dataset error"
     print("dataset ok")
