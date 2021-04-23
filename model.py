@@ -160,4 +160,5 @@ if __name__ == "__main__":
     left = torch.rand((4, 3, 256, 256))
     model = Model()
     pred = model.forward(left, left)
-    print(pred.shape)
+    assert pred.shape == (4, 1, 256, 256), "model"
+    print("model ok")
