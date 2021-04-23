@@ -119,12 +119,15 @@ class CostFilter(nn.Module):
 class DisparityRefinment(nn.Module):
     def __init__(self, k):
         super().__init__()
-        self.conv1 = CNNBlock(1, 1, kernel_size=3, stride=1, padding=1)
+        self.conv1 = CNNBlock(1, k, kernel_size=3, stride=1, padding=1)
         self.upsample = nn.Upsample(scale_factor=pow(2, k), mode='bilinear', align_corners=False)
+        self.conv2 =  nn.Conv2d(k, 1, kernel_size=3, stride=1, padding=1)
 
     def forward(self, x):
         x = self.conv1(x)
-        return self.upsample(x)
+        x = self.upsample(x)
+        x = self.conv2(x)
+        return x
 
 
 class Model(nn.Module):
