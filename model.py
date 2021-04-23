@@ -45,6 +45,17 @@ class CNNBlock3D(nn.Module):
 
     def forward(self, x):
         return self.act(self.bn(self.conv(x)))
+    
+
+class CNNBlockT(nn.Module):
+    def __init__(self, in_channels, out_channels, **kwargs):
+        super(CNNBlockT, self).__init__()
+        self.conv = nn.ConvTranspose2d(in_channels, out_channels, bias=False, **kwargs)
+        self.bn = nn.BatchNorm2d(out_channels)
+        self.act = nn.LeakyReLU(0.2)
+
+    def forward(self, x):
+        return self.act(self.bn(self.conv(x)))
 
 
 class ResBlock(nn.Module):
@@ -119,9 +130,10 @@ class CostFilter(nn.Module):
 class DisparityRefinment(nn.Module):
     def __init__(self, k):
         super().__init__()
-        self.conv1 = CNNBlock(1, k, kernel_size=3, stride=1, padding=1)
-        self.upsample = nn.Upsample(scale_factor=pow(2, k), mode='bilinear', align_corners=False)
-        self.conv2 =  nn.Conv2d(k, 1, kernel_size=3, stride=1, padding=1)
+        self.conv1 = CNNBlock(1, 1, kernel_size=3, stride=1, padding=1)
+        self.upsample = nn.Sequential(*[CNNBlockT(1, 1, kernel_size=3, stride=2, padding=1, output_padding=1) for _ in range(k)])
+        # self.upsample = nn.Upsample(scale_factor=pow(2, k), mode='bilinear', align_corners=False)
+        self.conv2 =  nn.Conv2d(1, 1, kernel_size=3, stride=1, padding=1)
 
     def forward(self, x):
         x = self.conv1(x)
@@ -148,9 +160,9 @@ class Model(nn.Module):
         cost = torch.squeeze(cost, 1)
 
         disp = self.predict(cost)
-        disp = self.refine(disp)
+        pred = self.refine(disp)
 
-        return disp
+        return pred
 
 
 class LossFunction(nn.Module):
@@ -166,5 +178,5 @@ if __name__ == "__main__":
     left = torch.rand((4, 3, 256, 256))
     model = Model()
     pred = model.forward(left, left)
-    assert pred.shape == (4, 1, 256, 256), "model"
+    assert pred.shape == (4, 1, 256, 256), "model " + str(pred.shape)
     print("model ok")
