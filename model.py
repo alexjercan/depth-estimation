@@ -83,15 +83,12 @@ class FeatureExtraction(nn.Module):
 
         downsample = []
         for _ in range(k):
-            downsample.append(CNNBlock(in_channel, out_channel,
-                                       kernel_size=5, stride=2, padding=2))
+            downsample.append(CNNBlock(in_channel, out_channel, kernel_size=5, stride=2, padding=2))
             in_channel = out_channel
         self.downsample = nn.Sequential(*downsample)
 
-        self.residual_blocks = nn.Sequential(
-            *[ResBlock(out_channel, out_channel) for _ in range(6)])
-        self.conv = nn.Conv2d(out_channel, out_channel,
-                              kernel_size=3, stride=1, padding=1)
+        self.residual_blocks = nn.Sequential(*[ResBlock(out_channel, out_channel) for _ in range(6)])
+        self.conv = nn.Conv2d(out_channel, out_channel, kernel_size=3, stride=1, padding=1)
 
     def forward(self, x):
         output = x
@@ -108,13 +105,11 @@ class CostFilter(nn.Module):
 
         filters = []
         for _ in range(4):
-            filters.append(CNNBlock3D(in_channel, out_channel,
-                                      kernel_size=3, stride=1, padding=1))
+            filters.append(CNNBlock3D(in_channel, out_channel, kernel_size=3, stride=1, padding=1))
             in_channel = out_channel
 
         self.filter = nn.Sequential(*filters)
-        self.conv3d = nn.Conv3d(
-            out_channel, 1, kernel_size=3, stride=1, padding=1)
+        self.conv3d = nn.Conv3d(out_channel, 1, kernel_size=3, stride=1, padding=1)
 
     def forward(self, x):
         x = self.filter(x)
@@ -125,8 +120,7 @@ class DisparityRefinment(nn.Module):
     def __init__(self, k):
         super().__init__()
         self.conv1 = CNNBlock(1, 1, kernel_size=3, stride=1, padding=1)
-        self.upsample = nn.Upsample(scale_factor=pow(2, k),
-                                    mode='bilinear', align_corners=False)
+        self.upsample = nn.Upsample(scale_factor=pow(2, k), mode='bilinear', align_corners=False)
 
     def forward(self, x):
         x = self.conv1(x)
