@@ -1,0 +1,17 @@
+DATASET_ROOT: "../bdataset_stereo"
+JSON_PATH: "train.json"
+BATCH_SIZE: 2
+IMAGE_SIZE: 256
+WORKERS: 8
+PIN_MEMORY: True
+SHUFFLE: True
+
+LEARNING_RATE: 0.001
+BETAS: [.9, .999]
+MILESTONES: [150]
+GAMMA: .5
+
+NUM_EPOCHS: 5
+OUT_PATH: "./runs"
+LOAD_MODEL: False
+CHECKPOINT_FILE: "normal.pth"
