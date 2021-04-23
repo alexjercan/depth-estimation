@@ -1,0 +1,11 @@
+DATASET_ROOT: "../bdataset_stereo"
+JSON_PATH: "test.json"
+BATCH_SIZE: 2
+IMAGE_SIZE: 256
+WORKERS: 8
+PIN_MEMORY: True
+SHUFFLE: True
+
+OUT_PATH: "./runs"
+LOAD_MODEL: True
+CHECKPOINT_FILE: "normal.pth"

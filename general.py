@@ -22,23 +22,21 @@ def init_weights(m):
         torch.nn.init.constant_(m.bias, 0)
 
 
-def load_checkpoint(encoder, decoder, checkpoint_file, device):
+def load_checkpoint(model, checkpoint_file, device):
     checkpoint = torch.load(checkpoint_file, map_location=device)
     init_epoch = checkpoint['epoch_idx']
-    encoder.load_state_dict(checkpoint['encoder_state_dict'])
-    decoder.load_state_dict(checkpoint['decoder_state_dict'])
+    model.load_state_dict(checkpoint['state_dict'])
 
-    return init_epoch, encoder, decoder
+    return init_epoch, model
 
 
-def save_checkpoint(epoch_idx, encoder, decoder, dir_checkpoints):
+def save_checkpoint(epoch_idx, model, dir_checkpoints):
     file_name = 'checkpoint-epoch-%03d.pth' % (epoch_idx + 1)
     output_path = os.path.join(dir_checkpoints, file_name)
     if not os.path.exists(dir_checkpoints):
         os.makedirs(dir_checkpoints)
     checkpoint = {
         'epoch_idx': epoch_idx,
-        'encoder_state_dict': encoder.state_dict(),
-        'decoder_state_dict': decoder.state_dict(),
+        'state_dict': model.state_dict(),
     }
     torch.save(checkpoint, output_path)

@@ -15,9 +15,10 @@ from tqdm import tqdm
 from config import parse_train_config, DEVICE
 from datetime import datetime as dt
 from model import Model, LossFunction
-# from test import test
+from test import test
 from general import init_weights, save_checkpoint, load_checkpoint
 from dataset import create_dataloader
+
 
 def train_one_epoch(model, dataloader, loss_fn, solver, epoch_idx):
     loop = tqdm(dataloader, leave=True)
@@ -30,7 +31,7 @@ def train_one_epoch(model, dataloader, loss_fn, solver, epoch_idx):
         right_depth = right_depth.to(DEVICE, non_blocking=True)
 
         predictions = model(left_img, right_img)
-        loss = loss_fn(predictions, left_depth)
+        loss = loss_fn(predictions, right_depth)
 
         losses.append(loss.item())
 
@@ -42,11 +43,14 @@ def train_one_epoch(model, dataloader, loss_fn, solver, epoch_idx):
         loop.set_postfix(loss=mean_loss, epoch=epoch_idx)
 
 
-def train(config):
+def train(config=None):
     torch.backends.cudnn.benchmark = True
+    
+    config = parse_train_config() if not config else config
 
-    _, dataloader = create_dataloader(config.DATASET_ROOT, config.JSON_PATH, batch_size=config.BATCH_SIZE,
-                                      img_size=config.IMAGE_SIZE, workers=config.WORKERS, pin_memory=config.PIN_MEMORY, shuffle=True)
+    _, dataloader = create_dataloader(config.DATASET_ROOT, config.JSON_PATH, 
+                                      batch_size=config.BATCH_SIZE, img_size=config.IMAGE_SIZE, 
+                                      workers=config.WORKERS, pin_memory=config.PIN_MEMORY, shuffle=config.SHUFFLE)
 
     model = Model()
     model.apply(init_weights)
@@ -68,7 +72,7 @@ def train(config):
         train_one_epoch(model, dataloader, loss_fn, solver, epoch_idx)
         lr_scheduler.step()
 
-        # test(model)
+        test(model)
         save_checkpoint(epoch_idx, model, output_dir)
 
 
