@@ -5,11 +5,11 @@
 # References:
 #
 
-import yaml
 import torch
+import argparse
 from tqdm import tqdm
 
-from config import parse_test_config, DEVICE
+from config import parse_test_config, DEVICE, read_yaml_config
 from model import Model, LossFunction
 from general import load_checkpoint
 from dataset import create_dataloader
@@ -53,6 +53,10 @@ def test(model=None, config=None):
 
 
 if __name__ == "__main__":
-    with open("test.yaml", "r") as f:
-        config = parse_test_config(yaml.load(f))
-    test(config=config)
+    parser = argparse.ArgumentParser(description='test model')
+    parser.add_argument('--test', type=str, default="test.yaml", help='test config file')
+    opt = parser.parse_args()
+
+    config_test = parse_test_config(read_yaml_config(opt.test))
+    
+    test(config=config_test)

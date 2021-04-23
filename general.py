@@ -8,6 +8,7 @@
 import os
 import torch
 
+
 def init_weights(m):
     if type(m) == torch.nn.Conv2d or type(m) == torch.nn.Conv3d or \
             type(m) == torch.nn.ConvTranspose2d or type(m) == torch.nn.ConvTranspose3d:
@@ -24,14 +25,14 @@ def init_weights(m):
 
 def load_checkpoint(model, checkpoint_file, device):
     checkpoint = torch.load(checkpoint_file, map_location=device)
-    init_epoch = checkpoint['epoch_idx']
+    init_epoch = checkpoint['epoch_idx'] + 1
     model.load_state_dict(checkpoint['state_dict'])
 
     return init_epoch, model
 
 
 def save_checkpoint(epoch_idx, model, dir_checkpoints):
-    file_name = 'checkpoint-epoch-%03d.pth' % (epoch_idx + 1)
+    file_name = 'checkpoint-epoch-%03d.pth' % (epoch_idx)
     output_path = os.path.join(dir_checkpoints, file_name)
     if not os.path.exists(dir_checkpoints):
         os.makedirs(dir_checkpoints)

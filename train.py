@@ -8,11 +8,11 @@
 import os
 import re
 
-import yaml
 import torch
+import argparse
 from tqdm import tqdm
 
-from config import parse_train_config, DEVICE
+from config import parse_test_config, parse_train_config, DEVICE, read_yaml_config
 from datetime import datetime as dt
 from model import Model, LossFunction
 from test import test
@@ -43,7 +43,7 @@ def train_one_epoch(model, dataloader, loss_fn, solver, epoch_idx):
         loop.set_postfix(loss=mean_loss, epoch=epoch_idx)
 
 
-def train(config=None):
+def train(config=None, config_test=None):
     torch.backends.cudnn.benchmark = True
     
     config = parse_train_config() if not config else config
@@ -72,11 +72,17 @@ def train(config=None):
         train_one_epoch(model, dataloader, loss_fn, solver, epoch_idx)
         lr_scheduler.step()
 
-        test(model)
+        test(model, config_test)
         save_checkpoint(epoch_idx, model, output_dir)
 
 
 if __name__ == "__main__":
-    with open("train.yaml", "r") as f:
-        config = parse_train_config(yaml.load(f))
-    train(config)
+    parser = argparse.ArgumentParser(description='train model')
+    parser.add_argument('--train', type=str, default="train.yaml", help='train config file')
+    parser.add_argument('--test', type=str, default="test.yaml", help='test config file')
+    opt = parser.parse_args()
+    
+    config_train = parse_train_config(read_yaml_config(opt.train))
+    config_test = parse_test_config(read_yaml_config(opt.test))
+
+    train(config_train, config_test)
