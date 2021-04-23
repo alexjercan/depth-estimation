@@ -123,12 +123,13 @@ class DisparityRefinment(nn.Module):
         
         self.scale = pow(2, k)
         self.residual_blocks = nn.Sequential(*[ResBlock(1, 1) for _ in range(6)])
-        self.conv =  nn.Conv2d(1, 1, kernel_size=3, stride=1, padding=1)
+        self.conv =  nn.Conv2d(2, 1, kernel_size=3, stride=1, padding=1)
 
     def forward(self, x):
         r = F.interpolate(x, scale_factor=self.scale, mode='bilinear', align_corners=False)
         y = self.residual_blocks(r)
-        return self.conv(r + y)
+        z = torch.cat((r, y), dim=1)
+        return self.conv(z)
 
 
 class Model(nn.Module):
