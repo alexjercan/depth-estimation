@@ -91,4 +91,4 @@ def read_yaml_config(path):
         return None
     else:
         with open(path, "r") as f:
-            return yaml.load(f)
+            return yaml.safe_load(f)
