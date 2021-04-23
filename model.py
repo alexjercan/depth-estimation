@@ -35,17 +35,6 @@ class CNNBlock(nn.Module):
 
     def forward(self, x):
         return self.act(self.bn(self.conv(x)))
-    
-
-class CNNBlockT(nn.Module):
-    def __init__(self, in_channels, out_channels, **kwargs):
-        super(CNNBlockT, self).__init__()
-        self.conv = nn.ConvTranspose2d(in_channels, out_channels, bias=False, **kwargs)
-        self.bn = nn.BatchNorm2d(out_channels)
-        self.act = nn.LeakyReLU(0.2)
-
-    def forward(self, x):
-        return self.act(self.bn(self.conv(x)))
 
 
 class CNNBlock3D(nn.Module):
