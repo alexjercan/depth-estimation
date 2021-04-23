@@ -150,6 +150,15 @@ class Model(nn.Module):
         return disp
 
 
+class LossFunction(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.l1 = nn.L1Loss()
+
+    def forward(self, predictions, targets):
+        return self.l1(predictions, targets)
+
+
 if __name__ == "__main__":
     left = torch.rand((4, 3, 256, 256))
     model = Model()
