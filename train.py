@@ -34,7 +34,7 @@ def train_one_epoch(model, dataloader, loss_fn, solver, epoch_idx):
         right_normal = right_normal.to(DEVICE, non_blocking=True)
 
         predictions = model(left_img, right_img)
-        item_loss, loss = loss_fn(predictions, (right_depth, right_normal))
+        item_loss, loss = loss_fn(predictions, (left_depth, left_normal))
 
         losses.append(loss.item())
         item_losses.append([il.item() for il in item_loss])

@@ -359,7 +359,7 @@ class DisparityFCN(nn.Module):
         cost = torch.squeeze(cost, 1)
 
         disp = self.predict(cost)
-        disp = F.interpolate(disp, size=right_image.shape[-2:], mode='bilinear', align_corners=False)
+        disp = F.interpolate(disp, size=left_image.shape[-2:], mode='bilinear', align_corners=False)
 
         return disp
 
@@ -372,7 +372,7 @@ class Model(nn.Module):
 
     def forward(self, left_image, right_image):
         disp = self.disparityFCN(left_image, right_image)
-        norm = self.normalsFCN(right_image)
+        norm = self.normalsFCN(left_image)
 
         return disp, norm
 
@@ -401,7 +401,7 @@ if __name__ == "__main__":
     assert pred.shape == (4, 1, 256, 256), "DisparityFCN"
     
     model = NormalsFCN()
-    pred = model(right)
+    pred = model(left)
     assert pred.shape == (4, 3, 256, 256), "NormalsFCN"
     
     model = Model()
