@@ -34,7 +34,7 @@ def detect(model=None, config=None):
 
             predictions = model(left_img, right_img)
             
-            save_predictions(predictions.cpu().numpy(), [path])
+            save_predictions(predictions, [path])
 
 
 if __name__ == "__main__":

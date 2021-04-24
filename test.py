@@ -36,15 +36,17 @@ def test(model=None, config=None):
 
     model.eval()
 
-    for _, (left_img, right_img, left_depth, right_depth) in enumerate(loop):
+    for _, (left_img, right_img, left_depth, right_depth, left_normal, right_normal) in enumerate(loop):
         with torch.no_grad():
             left_img = left_img.to(DEVICE, non_blocking=True)
             right_img = right_img.to(DEVICE, non_blocking=True)
             left_depth = left_depth.to(DEVICE, non_blocking=True)
             right_depth = right_depth.to(DEVICE, non_blocking=True)
-
+            left_normal = left_normal.to(DEVICE, non_blocking=True)
+            right_normal = right_normal.to(DEVICE, non_blocking=True)
+            
             predictions = model(left_img, right_img)
-            loss = loss_fn(predictions, right_depth)
+            loss = loss_fn(predictions, (right_depth, right_normal))
             
             losses.append(loss.item())
 

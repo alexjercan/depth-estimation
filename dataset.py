@@ -7,7 +7,7 @@
 
 import os
 import json
-from util import load_depth, load_image
+from util import load_depth, load_image, load_normal
 import torch
 
 from torch.utils.data import Dataset, DataLoader
@@ -44,24 +44,34 @@ class BDataset(Dataset):
         right_img_path = os.path.join(self.dataset_root, self.json_data[index]["imageR"])
         left_depth_path = os.path.join(self.dataset_root, self.json_data[index]["depthL"])
         right_depth_path = os.path.join(self.dataset_root, self.json_data[index]["depthR"])
+        left_normal_path = os.path.join(self.dataset_root, self.json_data[index]["normalL"])
+        right_normal_path = os.path.join(self.dataset_root, self.json_data[index]["normalR"])
 
         left_img = load_image(left_img_path)
         right_img = load_image(right_img_path)
         left_depth = load_depth(left_depth_path)
         right_depth = load_depth(right_depth_path)
+        left_normal = load_normal(left_normal_path)
+        right_normal = load_normal(right_normal_path)
 
-        return left_img, right_img, left_depth, right_depth
+        return left_img, right_img, left_depth, right_depth, left_normal, right_normal
 
     def __transform__(self, data):
-        left_img, right_img, left_depth, right_depth = data
+        left_img, right_img, left_depth, right_depth, left_normal, right_normal = data
         
         left_img = left_img.transpose(2, 0, 1)
         right_img = right_img.transpose(2, 0, 1)
         left_depth = left_depth.transpose(2, 0, 1)
         right_depth = right_depth.transpose(2, 0, 1)
+        left_normal = left_normal.transpose(2, 0, 1)
+        right_normal = right_normal.transpose(2, 0, 1)
         
-        return torch.from_numpy(left_img), torch.from_numpy(right_img), torch.from_numpy(left_depth), torch.from_numpy(right_depth)
-
+        return (torch.from_numpy(left_img), 
+                torch.from_numpy(right_img), 
+                torch.from_numpy(left_depth), 
+                torch.from_numpy(right_depth),
+                torch.from_numpy(left_normal), 
+                torch.from_numpy(right_normal))
 
 class LoadImages():
     def __init__(self, json_data, img_size=256):
@@ -109,15 +119,17 @@ class LoadImages():
 if __name__ == "__main__":
     from config import JSON
     _, dataloader = create_dataloader("../bdataset_stereo", "train.json")
-    left_imgs, right_imgs, left_depths, right_depths = next(iter(dataloader))
+    left_imgs, right_imgs, left_depths, right_depths, left_normals, right_normals = next(iter(dataloader))
     assert left_imgs.shape == right_imgs.shape, "dataset error"
     assert left_depths.shape == right_depths.shape, "dataset error"
+    assert right_normals.shape == left_normals.shape, "dataset error"
     assert left_imgs.shape == (2, 3, 256, 256), "dataset error"
     assert left_depths.shape == (2, 1, 256, 256), "dataset error"
+    assert left_normals.shape == (2, 3, 256, 256), "dataset error"
     
     dataset = LoadImages(JSON)
     left_img, right_img, path = next(iter(dataset))
-    assert left_img.shape == (1, 3, 256, 256), "dataset error"
-    assert right_img.shape == (1, 3, 256, 256), "dataset error"
+    assert left_img.shape == (3, 256, 256), "dataset error"
+    assert right_img.shape == (3, 256, 256), "dataset error"
 
     print("dataset ok")
