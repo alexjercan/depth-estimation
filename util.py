@@ -20,7 +20,7 @@ def load_image(path):
 
 
 def load_depth(path):
-    img = exr2depth(path)  # 1 channel depth
+    img = exr2depth(path, maxvalue=10)  # 1 channel depth
     assert img is not None, 'Image Not Found ' + path
     return img
 
