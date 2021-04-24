@@ -68,7 +68,7 @@ def exr2normal(path):
     img[img > 1] = 1
     img[img < 0] = 0
     
-    img = np.array(img).astype(np.uint8).reshape(img.shape[0], img.shape[1], -1)
+    img = np.array(img).astype(np.float32).reshape(img.shape[0], img.shape[1], -1)
 
     return img
 
