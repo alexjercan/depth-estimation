@@ -380,13 +380,17 @@ class Model(nn.Module):
 class LossFunction(nn.Module):
     def __init__(self):
         super().__init__()
-        self.depth_loss = nn.L1Loss()
-        self.normal_loss = nn.L1Loss()
+        self.depth_loss = nn.L1Loss(reduction='mean')
+        self.normal_loss = nn.L1Loss(reduction='mean')
 
     def forward(self, predictions, targets):
         (depth_p, normal_p) = predictions
         (depth_gt, normal_gt) = targets
-        return self.depth_loss(depth_p, depth_gt) * 1 + self.normal_loss(normal_p, normal_gt) * 1
+        
+        depth_loss = self.depth_loss(depth_p, depth_gt)
+        normal_loss = self.normal_loss(normal_p, normal_gt)
+        
+        return [depth_loss, normal_loss], depth_loss + normal_loss
 
 
 if __name__ == "__main__":

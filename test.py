@@ -33,6 +33,7 @@ def test(model=None, config=None):
 
     loop = tqdm(dataloader, leave=True)
     losses = []
+    item_losses = []
 
     model.eval()
 
@@ -46,12 +47,14 @@ def test(model=None, config=None):
             right_normal = right_normal.to(DEVICE, non_blocking=True)
             
             predictions = model(left_img, right_img)
-            loss = loss_fn(predictions, (right_depth, right_normal))
+            item_loss, loss = loss_fn(predictions, (right_depth, right_normal))
             
             losses.append(loss.item())
+            item_losses.append([il.item() for il in item_loss])
 
             mean_loss = sum(losses) / len(losses)
-            loop.set_postfix(loss=mean_loss)
+            mean_item_loss = [sum(il) / len(losses) for il in zip(*item_losses)]
+            loop.set_postfix(loss=mean_loss, item_losses=mean_item_loss)
 
 
 if __name__ == "__main__":
