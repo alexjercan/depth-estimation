@@ -18,10 +18,13 @@ IMAGE_SIZE = 256
 WORKERS = 8
 PIN_MEMORY = True
 
-LEARNING_RATE = 1e-3
-BETAS = [.9, .999]
+LEARNING_RATE = 0.1
+MOMENTUM = 0.9
+WEIGHT_DECAY = 0.0001
+DAMPENING = 0.1
+
 MILESTONES = [150]
-GAMMA = .5
+GAMMA = .1
 
 NUM_EPOCHS = 5
 OUT_PATH = './runs'
@@ -45,7 +48,10 @@ def parse_train_config(config=None):
     c.SHUFFLE = config.get("SHUFFLE", True)
 
     c.LEARNING_RATE = config.get("LEARNING_RATE", LEARNING_RATE)
-    c.BETAS = config.get("BETAS", BETAS)
+    c.MOMENTUM = config.get("MOMENTUM", MOMENTUM)
+    c.WEIGHT_DECAY = config.get("WEIGHT_DECAY", WEIGHT_DECAY)
+    c.DAMPENING = config.get("DAMPENING", DAMPENING)
+    
     c.MILESTONES = config.get("MILESTONES", MILESTONES)
     c.GAMMA = config.get("GAMMA", GAMMA)
 

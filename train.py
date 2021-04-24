@@ -9,10 +9,11 @@ import os
 import re
 
 import torch
+import torch.optim
 import argparse
 from tqdm import tqdm
 
-from config import parse_test_config, parse_train_config, DEVICE, read_yaml_config
+from config import LEARNING_RATE, parse_test_config, parse_train_config, DEVICE, read_yaml_config
 from datetime import datetime as dt
 from model import Model, LossFunction
 from test import test
@@ -59,19 +60,20 @@ def train(config=None, config_test=None):
 
     model = Model()
     model.apply(init_weights)
-    solver = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=config.LEARNING_RATE, betas=config.BETAS)
+    solver = torch.optim.SGD(model.parameters(), lr=config.LEARNING_RATE, momentum=config.MOMENTUM, 
+                             dampening=config.DAMPENING, weight_decay=config.WEIGHT_DECAY)
     lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(solver, milestones=config.MILESTONES, gamma=config.GAMMA)
     model = model.to(DEVICE)
 
     loss_fn = LossFunction()
 
-    init_epoch = 0
+    epoch_idx = 0
     if config.CHECKPOINT_FILE and config.LOAD_MODEL:
-        init_epoch, model = load_checkpoint(model, config.CHECKPOINT_FILE, DEVICE)
+        epoch_idx, model = load_checkpoint(model, config.CHECKPOINT_FILE, DEVICE)
 
     output_dir = os.path.join(config.OUT_PATH, re.sub("[^0-9a-zA-Z]+", "-", dt.now().isoformat()))
 
-    for epoch_idx in range(init_epoch, config.NUM_EPOCHS):
+    for epoch_idx in range(epoch_idx, config.NUM_EPOCHS):
         model.train()
 
         train_one_epoch(model, dataloader, loss_fn, solver, epoch_idx)

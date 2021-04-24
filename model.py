@@ -387,8 +387,8 @@ class LossFunction(nn.Module):
         (depth_p, normal_p) = predictions
         (depth_gt, normal_gt) = targets
         
-        depth_loss = self.depth_loss(depth_p, depth_gt)
-        normal_loss = self.normal_loss(normal_p, normal_gt)
+        depth_loss = self.depth_loss(depth_p, depth_gt) * 1
+        normal_loss = self.normal_loss(normal_p, normal_gt) * 1
         
         return [depth_loss, normal_loss], depth_loss + normal_loss
 
