@@ -75,8 +75,11 @@ def train(config=None, config_test=None):
         lr_scheduler.step()
 
         test(model, config_test)
-        save_checkpoint(epoch_idx, model, output_dir)
+        if config.SAVE_MODEL:
+            save_checkpoint(epoch_idx, model, output_dir)
 
+    if not config.SAVE_MODEL:
+        save_checkpoint(epoch_idx, model, output_dir)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='train model')

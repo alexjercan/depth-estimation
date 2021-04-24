@@ -26,6 +26,7 @@ GAMMA = .5
 NUM_EPOCHS = 5
 OUT_PATH = './runs'
 LOAD_MODEL = False
+SAVE_MODEL = True
 CHECKPOINT_FILE = "normal.pth"
 
 JSON = [{"imageL": "data/left.png", "imageR": "data/right.png", "output": "data/depth.exr"}]
@@ -51,6 +52,7 @@ def parse_train_config(config=None):
     c.NUM_EPOCHS = config.get("NUM_EPOCHS", NUM_EPOCHS)
     c.OUT_PATH = config.get("OUT_PATH", OUT_PATH)
     c.LOAD_MODEL = config.get("LOAD_MODEL", LOAD_MODEL)
+    c.SAVE_MODEL = config.get("SAVE_MODEL", SAVE_MODEL)
     c.CHECKPOINT_FILE = config.get("CHECKPOINT_FILE", CHECKPOINT_FILE)
 
     return c

@@ -14,4 +14,5 @@ GAMMA: .5
 NUM_EPOCHS: 5
 OUT_PATH: "./runs"
 LOAD_MODEL: False
+SAVE_MODEL: True
 CHECKPOINT_FILE: "normal.pth"

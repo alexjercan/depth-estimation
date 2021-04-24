@@ -386,7 +386,7 @@ class LossFunction(nn.Module):
     def forward(self, predictions, targets):
         (depth_p, normal_p) = predictions
         (depth_gt, normal_gt) = targets
-        return self.depth_loss(depth_p, depth_gt) * 10 + self.normal_loss(normal_p, normal_gt) * 1
+        return self.depth_loss(depth_p, depth_gt) * 1 + self.normal_loss(normal_p, normal_gt) * 1
 
 
 if __name__ == "__main__":
