@@ -319,29 +319,29 @@ class DisparityFCN(nn.Module):
 class DepthRefinement(nn.Module):
     def __init__(self, k=3):
         super(DepthRefinement, self).__init__()
-        self.block = CNNBlock(1, 8, kernel_size=3, stride=1, padding=1)
-        self.filter = nn.Sequential(*[CNNBlock(8, 8, kernel_size=3, stride=1, padding=1) for _ in range(k)])
-        self.predict = nn.Conv2d(8, 1, kernel_size=1)
+        # self.block = CNNBlock(1, 8, kernel_size=3, stride=1, padding=1)
+        # self.filter = nn.Sequential(*[CNNBlock(8, 8, kernel_size=3, stride=1, padding=1) for _ in range(k)])
+        # self.predict = nn.Conv2d(8, 1, kernel_size=1)
         
     def forward(self, depth):
-        out = self.block(depth)    
-        out = self.filter(out)
-        out = self.predict(out)
-        return out
+        # out = self.block(depth)    
+        # out = self.filter(out)
+        # out = self.predict(out)
+        return depth
         
 
 class NormalRefinement(nn.Module):
     def __init__(self, k=3):
         super(NormalRefinement, self).__init__()
-        self.block = CNNBlock(3, 8, kernel_size=3, stride=1, padding=1)
-        self.filter = nn.Sequential(*[CNNBlock(8, 8, kernel_size=3, stride=1, padding=1) for _ in range(k)])
-        self.predict = nn.Conv2d(8, 3, kernel_size=1)
+        # self.block = CNNBlock(3, 8, kernel_size=3, stride=1, padding=1)
+        # self.filter = nn.Sequential(*[CNNBlock(8, 8, kernel_size=3, stride=1, padding=1) for _ in range(k)])
+        # self.predict = nn.Conv2d(8, 3, kernel_size=1)
         
     def forward(self, norm):
-        out = self.block(norm)
-        out = self.filter(out)
-        out = self.predict(out)
-        return out
+        # out = self.block(norm)
+        # out = self.filter(out)
+        # out = self.predict(out)
+        return norm
         
 
 class Model(nn.Module):
@@ -368,19 +368,19 @@ class LossFunction(nn.Module):
         super(LossFunction, self).__init__()
         self.depth_loss = nn.L1Loss(reduction='mean')
         self.normal_loss = nn.L1Loss(reduction='mean')
-        self.r_depth_loss = nn.L1Loss(reduction='mean')
-        self.r_normal_loss = nn.L1Loss(reduction='mean')
+        # self.r_depth_loss = nn.L1Loss(reduction='mean')
+        # self.r_normal_loss = nn.L1Loss(reduction='mean')
 
     def forward(self, predictions, targets):
         (depth_p, normal_p, r_depth_p, r_normal_p) = predictions
         (depth_gt, normal_gt) = targets
                 
-        depth_loss = self.depth_loss(depth_p, depth_gt) * 0.5
-        r_depth_loss = self.r_depth_loss(r_depth_p, depth_gt) * 0.5
-        normal_loss = self.normal_loss(normal_p, normal_gt) * 0.5
-        r_normal_loss = self.r_depth_loss(r_normal_p, normal_gt) * 0.5
+        depth_loss = self.depth_loss(depth_p, depth_gt) * 1.0
+        # r_depth_loss = self.r_depth_loss(r_depth_p, depth_gt) * 0.9
+        normal_loss = self.normal_loss(normal_p, normal_gt) * 1.0
+        # r_normal_loss = self.r_depth_loss(r_normal_p, normal_gt) * 0.9
         
-        return [depth_loss, r_depth_loss, normal_loss, r_normal_loss], depth_loss + r_depth_loss + normal_loss + r_normal_loss
+        return [depth_loss, normal_loss], depth_loss + normal_loss
 
 
 if __name__ == "__main__":
