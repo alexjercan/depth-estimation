@@ -1,5 +1,5 @@
 DATASET_ROOT: "../bdataset_stereo"
-JSON_PATH: "test.json"
+JSON_PATH: "test1.json"
 BATCH_SIZE: 2
 IMAGE_SIZE: 256
 WORKERS: 8

@@ -79,10 +79,13 @@ def train(config=None, config_test=None):
         train_one_epoch(model, dataloader, loss_fn, solver, epoch_idx)
         lr_scheduler.step()
 
-        test(model, config_test)
+        if config.TEST:
+            test(model, config_test)
         if config.SAVE_MODEL:
             save_checkpoint(epoch_idx, model, output_dir)
 
+    if not config.TEST:
+        test(model, config_test)
     if not config.SAVE_MODEL:
         save_checkpoint(epoch_idx, model, output_dir)
 

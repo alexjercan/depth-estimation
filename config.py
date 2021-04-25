@@ -27,6 +27,7 @@ MILESTONES = [150]
 GAMMA = .1
 
 NUM_EPOCHS = 5
+TEST = True
 OUT_PATH = './runs'
 LOAD_MODEL = False
 SAVE_MODEL = True
@@ -56,6 +57,7 @@ def parse_train_config(config=None):
     c.GAMMA = config.get("GAMMA", GAMMA)
 
     c.NUM_EPOCHS = config.get("NUM_EPOCHS", NUM_EPOCHS)
+    c.TEST = config.get("TEST", TEST) 
     c.OUT_PATH = config.get("OUT_PATH", OUT_PATH)
     c.LOAD_MODEL = config.get("LOAD_MODEL", LOAD_MODEL)
     c.SAVE_MODEL = config.get("SAVE_MODEL", SAVE_MODEL)

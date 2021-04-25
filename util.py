@@ -74,21 +74,33 @@ def exr2normal(path):
 
 
 def save_predictions(predictions, paths):
-    depth_ps, normal_ps = predictions
+    depth_ps, normal_ps, r_depth_ps, r_normal_ps = predictions
     depth_ps = depth_ps.cpu().numpy()
     normal_ps = normal_ps.cpu().numpy()
+    r_depth_ps = depth_ps.cpu().numpy()
+    r_normal_ps = normal_ps.cpu().numpy()
 
-    for depth_p, normal_p, path in zip(depth_ps, normal_ps, paths):
+    for depth_p, normal_p, r_depth_p, r_normal_p, path in zip(depth_ps, normal_ps, r_depth_ps, r_normal_ps, paths):
         depth = depth_p.transpose(1, 2, 0)
         normal = normal_p.transpose(1, 2, 0)
-        
+        r_depth = r_depth_p.transpose(1, 2, 0)
+        r_normal = r_normal_p.transpose(1, 2, 0)
+
         depth_path = str(Path(path).with_suffix(".depth.exr"))
         normal_path = str(Path(path).with_suffix(".normal.exr"))
+        r_depth_path = str(Path(path).with_suffix(".r_depth.exr"))
+        r_normal_path = str(Path(path).with_suffix(".r_normal.exr"))
 
         cv2.imwrite(depth_path, depth)
         cv2.imwrite(normal_path, normal)
+        cv2.imwrite(r_depth_path, r_depth)
+        cv2.imwrite(r_normal_path, r_normal)
         
         plt.imshow(depth)
         plt.savefig(str(Path(path).with_suffix(".depth.png")))
         plt.imshow(normal)
         plt.savefig(str(Path(path).with_suffix(".normal.png")))
+        plt.imshow(r_depth)
+        plt.savefig(str(Path(path).with_suffix(".r_depth.png")))
+        plt.imshow(r_normal)
+        plt.savefig(str(Path(path).with_suffix(".r_normal.png")))

@@ -5,14 +5,14 @@
 # References:
 # - https://arxiv.org/pdf/2003.14299.pdf
 # - https://arxiv.org/pdf/1807.08865.pdf
+# - https://xjqi.github.io/geonet.pdf
 # - https://github.com/meteorshowers/StereoNet-ActiveStereoNet
+# - https://github.com/xjqi/GeoNet
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from cat_fms import cat_fms
-from soft_argmin import FasterSoftArgmin
 from torchvision.models.utils import load_state_dict_from_url
 
 
@@ -285,7 +285,7 @@ class FCNHead(nn.Sequential):
 
 class NormalsFCN(nn.Module):
     def __init__(self, **kwargs):
-        super().__init__()
+        super(NormalsFCN, self).__init__()
         self.feature = resnet50(**kwargs)
         self.predict = FCNHead(512, 3)
     
@@ -298,99 +298,89 @@ class NormalsFCN(nn.Module):
         return norm
 
 
-class FeatureExtraction(nn.Module):
-    def __init__(self, k):
-        super().__init__()
-        self.k = k
-        in_channel = 3
-        out_channel = 32
-
-        downsample = []
-        for _ in range(k):
-            downsample.append(CNNBlock(in_channel, out_channel, kernel_size=5, stride=2, padding=2))
-            in_channel = out_channel
-        self.downsample = nn.Sequential(*downsample)
-
-        self.residual_blocks = nn.Sequential(*[BasicBlock(out_channel, out_channel) for _ in range(6)])
-        self.conv = nn.Conv2d(out_channel, out_channel, kernel_size=3, stride=1, padding=1)
-
-    def forward(self, x):
-        output = x
-        output = self.downsample(output)
-        output = self.residual_blocks(output)
-        return self.conv(output)
-
-
-class CostFilter(nn.Module):
-    def __init__(self):
-        super().__init__()
-        in_channel = 64
-        out_channel = 32
-
-        filters = []
-        for _ in range(4):
-            filters.append(CNNBlock3D(in_channel, out_channel, kernel_size=3, stride=1, padding=1))
-            in_channel = out_channel
-
-        self.filter = nn.Sequential(*filters)
-        self.conv3d = nn.Conv3d(out_channel, 1, kernel_size=3, stride=1, padding=1)
-
-    def forward(self, x):
-        x = self.filter(x)
-        return self.conv3d(x)
-
-
 class DisparityFCN(nn.Module):
-    def __init__(self, k=3, maxdisp=192):
-        super().__init__()
-        self.scale = pow(2, k)
-        self.maxdisp = (maxdisp + 1) // self.scale
-
-        self.feature = FeatureExtraction(k)
-        self.filter = CostFilter()
-        self.predict = FasterSoftArgmin(self.maxdisp)
+    def __init__(self, **kwargs):
+        super(DisparityFCN, self).__init__()
+        self.feature = resnet50(**kwargs)
+        self.predict = FCNHead(1024, 1)
 
     def forward(self, left_image, right_image):
         ref_fm = self.feature(left_image)
         target_fm = self.feature(right_image)
 
-        cost = cat_fms(ref_fm, target_fm, self.maxdisp)
-        cost = self.filter(cost)
-        cost = torch.squeeze(cost, 1)
+        disp = torch.cat((ref_fm, target_fm), dim=1)
 
-        disp = self.predict(cost)
+        disp = self.predict(disp)
         disp = F.interpolate(disp, size=left_image.shape[-2:], mode='bilinear', align_corners=False)
 
         return disp
 
 
+class DepthRefinement(nn.Module):
+    def __init__(self, k=3):
+        super(DepthRefinement, self).__init__()
+        self.block = CNNBlock(1, 8, kernel_size=3, stride=1, padding=1)
+        self.filter = nn.Sequential(*[CNNBlock(8, 8, kernel_size=3, stride=1, padding=1) for _ in range(k)])
+        self.predict = nn.Conv2d(8, 1, kernel_size=1)
+        
+    def forward(self, depth):
+        out = self.block(depth)    
+        out = self.filter(out)
+        out = depth + self.predict(out)
+        return out
+        
+
+class NormalRefinement(nn.Module):
+    def __init__(self, k=3):
+        super(NormalRefinement, self).__init__()
+        self.block = CNNBlock(3, 8, kernel_size=3, stride=1, padding=1)
+        self.filter = nn.Sequential(*[CNNBlock(8, 8, kernel_size=3, stride=1, padding=1) for _ in range(k)])
+        self.predict = nn.Conv2d(8, 3, kernel_size=1)
+        
+    def forward(self, norm):
+        out = self.block(norm)
+        out = self.filter(out)
+        out = norm + self.predict(out)
+        return out
+        
+
 class Model(nn.Module):
-    def __init__(self, k=3, maxdisp=192, **kwargs):
-        super().__init__()
-        self.disparityFCN = DisparityFCN(k, maxdisp)
+    def __init__(self, k=3, **kwargs):
+        super(Model, self).__init__()
+        self.disparityFCN = DisparityFCN(**kwargs)
         self.normalsFCN = NormalsFCN(**kwargs)
+        
+        self.depthRefinement = DepthRefinement(k)
+        self.normalRefinment = NormalRefinement(k)
 
     def forward(self, left_image, right_image):
-        disp = self.disparityFCN(left_image, right_image)
+        depth = self.disparityFCN(left_image, right_image)
         norm = self.normalsFCN(left_image)
+        
+        r_depth = self.depthRefinement(depth)
+        r_norm = self.normalRefinment(norm)
 
-        return disp, norm
+        return depth, norm, r_depth, r_norm
 
 
 class LossFunction(nn.Module):
     def __init__(self):
-        super().__init__()
+        super(LossFunction, self).__init__()
         self.depth_loss = nn.L1Loss(reduction='mean')
         self.normal_loss = nn.L1Loss(reduction='mean')
+        self.r_depth_loss = nn.L1Loss(reduction='mean')
+        self.r_normal_loss = nn.L1Loss(reduction='mean')
 
     def forward(self, predictions, targets):
-        (depth_p, normal_p) = predictions
+        (depth_p, normal_p, r_depth_p, r_normal_p) = predictions
         (depth_gt, normal_gt) = targets
+                
+        depth_loss = self.depth_loss(depth_p, depth_gt) * 0.5
+        r_depth_loss = self.r_depth_loss(r_depth_p, depth_gt) * 0.5
+        normal_loss = self.normal_loss(normal_p, normal_gt) * 0.5
+        r_normal_loss = self.r_depth_loss(r_normal_p, normal_gt) * 0.5
         
-        depth_loss = self.depth_loss(depth_p, depth_gt) * 1
-        normal_loss = self.normal_loss(normal_p, normal_gt) * 1
-        
-        return [depth_loss, normal_loss], depth_loss + normal_loss
+        return [depth_loss, r_depth_loss, normal_loss, r_normal_loss], depth_loss + r_depth_loss + normal_loss + r_normal_loss
 
 
 if __name__ == "__main__":
@@ -409,5 +399,7 @@ if __name__ == "__main__":
     assert isinstance(pred, tuple), "Model"
     assert pred[0].shape == (4, 1, 256, 256), "Model"
     assert pred[1].shape == (4, 3, 256, 256), "Model"
+    assert pred[2].shape == (4, 1, 256, 256), "Model"
+    assert pred[3].shape == (4, 3, 256, 256), "Model"
 
     print("model ok")
