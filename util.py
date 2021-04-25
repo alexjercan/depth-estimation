@@ -77,8 +77,8 @@ def save_predictions(predictions, paths):
     depth_ps, normal_ps, r_depth_ps, r_normal_ps = predictions
     depth_ps = depth_ps.cpu().numpy()
     normal_ps = normal_ps.cpu().numpy()
-    r_depth_ps = depth_ps.cpu().numpy()
-    r_normal_ps = normal_ps.cpu().numpy()
+    r_depth_ps = r_depth_ps.cpu().numpy()
+    r_normal_ps = r_normal_ps.cpu().numpy()
 
     for depth_p, normal_p, r_depth_p, r_normal_p, path in zip(depth_ps, normal_ps, r_depth_ps, r_normal_ps, paths):
         depth = depth_p.transpose(1, 2, 0)

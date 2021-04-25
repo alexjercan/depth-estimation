@@ -326,7 +326,7 @@ class DepthRefinement(nn.Module):
     def forward(self, depth):
         out = self.block(depth)    
         out = self.filter(out)
-        out = depth + self.predict(out)
+        out = self.predict(out)
         return out
         
 
@@ -340,7 +340,7 @@ class NormalRefinement(nn.Module):
     def forward(self, norm):
         out = self.block(norm)
         out = self.filter(out)
-        out = norm + self.predict(out)
+        out = self.predict(out)
         return out
         
 
