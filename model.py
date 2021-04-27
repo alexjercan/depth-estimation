@@ -242,8 +242,8 @@ class ResNet(nn.Module):
 
         x = self.layer1(x)
         x = self.layer2(x)
-        # x = self.layer3(x)
-        # x = self.layer4(x)
+        x = self.layer3(x)
+        x = self.layer4(x)
 
         return x
 
@@ -284,83 +284,47 @@ class FCNHead(nn.Sequential):
 
 
 class NormalsFCN(nn.Module):
-    def __init__(self, **kwargs):
+    def __init__(self):
         super(NormalsFCN, self).__init__()
-        self.feature = resnet50(**kwargs)
-        self.predict = FCNHead(512, 3)
-    
-    def forward(self, x):
-        fm = self.feature(x)
-    
-        norm = self.predict(fm)
-        norm = F.interpolate(norm, size=x.shape[-2:], mode='bilinear', align_corners=False)
+        self.predict = FCNHead(2048, 3)
 
-        return norm
+    def forward(self, x):
+        y = self.predict(x)
+        y = F.interpolate(y, scale_factor=32, mode='bilinear', align_corners=False)
+
+        return y
 
 
 class DisparityFCN(nn.Module):
-    def __init__(self, **kwargs):
+    def __init__(self):
         super(DisparityFCN, self).__init__()
-        self.feature = resnet50(**kwargs)
-        self.predict = FCNHead(1024, 1)
+        self.predict = FCNHead(2048, 1)
 
-    def forward(self, left_image, right_image):
-        ref_fm = self.feature(left_image)
-        target_fm = self.feature(right_image)
+    def forward(self, x):
+        y = self.predict(x)
+        y = F.interpolate(y, scale_factor=32, mode='bilinear', align_corners=False)
 
-        disp = torch.cat((ref_fm, target_fm), dim=1)
+        return y
 
-        disp = self.predict(disp)
-        disp = F.interpolate(disp, size=left_image.shape[-2:], mode='bilinear', align_corners=False)
-
-        return disp
-
-
-class DepthRefinement(nn.Module):
-    def __init__(self, k=3):
-        super(DepthRefinement, self).__init__()
-        # self.block = CNNBlock(1, 8, kernel_size=3, stride=1, padding=1)
-        # self.filter = nn.Sequential(*[CNNBlock(8, 8, kernel_size=3, stride=1, padding=1) for _ in range(k)])
-        # self.predict = nn.Conv2d(8, 1, kernel_size=1)
-        
-    def forward(self, depth):
-        # out = self.block(depth)    
-        # out = self.filter(out)
-        # out = self.predict(out)
-        return depth
-        
-
-class NormalRefinement(nn.Module):
-    def __init__(self, k=3):
-        super(NormalRefinement, self).__init__()
-        # self.block = CNNBlock(3, 8, kernel_size=3, stride=1, padding=1)
-        # self.filter = nn.Sequential(*[CNNBlock(8, 8, kernel_size=3, stride=1, padding=1) for _ in range(k)])
-        # self.predict = nn.Conv2d(8, 3, kernel_size=1)
-        
-    def forward(self, norm):
-        # out = self.block(norm)
-        # out = self.filter(out)
-        # out = self.predict(out)
-        return norm
-        
 
 class Model(nn.Module):
-    def __init__(self, k=3, **kwargs):
+    def __init__(self, **kwargs):
         super(Model, self).__init__()
-        self.disparityFCN = DisparityFCN(**kwargs)
-        self.normalsFCN = NormalsFCN(**kwargs)
+        self.feature = resnet50(**kwargs)
+
+        self.disparityFCN = DisparityFCN()
+        self.normalsFCN = NormalsFCN()
         
-        self.depthRefinement = DepthRefinement(k)
-        self.normalRefinment = NormalRefinement(k)
 
     def forward(self, left_image, right_image):
-        depth = self.disparityFCN(left_image, right_image)
-        norm = self.normalsFCN(left_image)
+        featureL = self.feature(left_image)
+        featureR = self.feature(right_image)
+        feature = featureL + featureR
         
-        r_depth = self.depthRefinement(depth)
-        r_norm = self.normalRefinment(norm)
+        depth = self.disparityFCN(feature)
+        norm = self.normalsFCN(feature)
 
-        return depth, norm, r_depth, r_norm
+        return depth, norm
 
 
 class LossFunction(nn.Module):
@@ -368,38 +332,24 @@ class LossFunction(nn.Module):
         super(LossFunction, self).__init__()
         self.depth_loss = nn.L1Loss(reduction='mean')
         self.normal_loss = nn.L1Loss(reduction='mean')
-        # self.r_depth_loss = nn.L1Loss(reduction='mean')
-        # self.r_normal_loss = nn.L1Loss(reduction='mean')
 
     def forward(self, predictions, targets):
-        (depth_p, normal_p, r_depth_p, r_normal_p) = predictions
+        (depth_p, normal_p) = predictions
         (depth_gt, normal_gt) = targets
                 
         depth_loss = self.depth_loss(depth_p, depth_gt) * 1.0
-        # r_depth_loss = self.r_depth_loss(r_depth_p, depth_gt) * 0.9
         normal_loss = self.normal_loss(normal_p, normal_gt) * 1.0
-        # r_normal_loss = self.r_depth_loss(r_normal_p, normal_gt) * 0.9
         
         return [depth_loss, normal_loss], depth_loss + normal_loss
 
 
 if __name__ == "__main__":
     left = torch.rand((4, 3, 256, 256))
-    right = torch.rand((4, 3, 256, 256))
-    model = DisparityFCN()
-    pred = model(left, right)
-    assert pred.shape == (4, 1, 256, 256), "DisparityFCN"
-    
-    model = NormalsFCN()
-    pred = model(left)
-    assert pred.shape == (4, 3, 256, 256), "NormalsFCN"
-    
+    right = torch.rand((4, 3, 256, 256))    
     model = Model()
     pred = model(left, right)
     assert isinstance(pred, tuple), "Model"
     assert pred[0].shape == (4, 1, 256, 256), "Model"
     assert pred[1].shape == (4, 3, 256, 256), "Model"
-    assert pred[2].shape == (4, 1, 256, 256), "Model"
-    assert pred[3].shape == (4, 3, 256, 256), "Model"
 
     print("model ok")
