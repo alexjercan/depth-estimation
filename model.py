@@ -57,18 +57,30 @@ class CNNBlock(nn.Module):
         return self.relu(self.bn(self.conv(x)))
 
 
+class CNNBlockT(nn.Module):
+    def __init__(self, in_channels, out_channels, **kwargs):
+        super(CNNBlockT, self).__init__()
+        self.conv = nn.ConvTranspose2d(in_channels, out_channels, **kwargs)
+        self.bn = nn.BatchNorm2d(out_channels)
+        self.relu = nn.ReLU(inplace=True)
+
+    def forward(self, x):
+        return self.relu(self.bn(self.conv(x)))
+
+
 class UpProjBlock(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(UpProjBlock, self).__init__()
-        self.block1 = CNNBlock(in_channels, in_channels, kernel_size=3, stride=1, padding=1, bias=False)
-        self.block2 = CNNBlock(in_channels, out_channels, kernel_size=5, stride=1, padding=2, bias=False)
+        self.block1 = CNNBlockT(in_channels, out_channels, kernel_size=3, stride=2, padding=1, output_padding=1, bias=False)
+        
+        self.block2 = CNNBlock(out_channels, out_channels, kernel_size=5, stride=1, padding=2, bias=False)
         self.conv3 = nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=1, padding=1, bias=False)
         self.bn3 = nn.BatchNorm2d(out_channels)
-        self.conv4 = nn.Conv2d(in_channels, out_channels, kernel_size=5, stride=1, padding=2, bias=False)
+        
+        self.conv4 = nn.Conv2d(out_channels, out_channels, kernel_size=5, stride=1, padding=2, bias=False)
         self.bn4 = nn.BatchNorm2d(out_channels)
         
     def forward(self, x):
-        x = F.interpolate(x, scale_factor=2, mode='nearest')
         x = self.block1(x)
         
         y = self.block2(x)
@@ -304,7 +316,7 @@ class DecoderFCN(nn.Module):
         self.layer3 = UpProjBlock(512, 256)
         self.layer4 = UpProjBlock(256, 64)
         
-        self.conv = nn.Conv2d(64, out_channels, kernel_size=7, stride=1, padding=3, bias=False)
+        self.conv = nn.ConvTranspose2d(64, out_channels, kernel_size=7, stride=2, padding=3, output_padding=1, bias=False)
 
     def forward(self, x):
         y = self.layer1(x)
@@ -312,7 +324,6 @@ class DecoderFCN(nn.Module):
         y = self.layer3(y)
         y = self.layer4(y)
 
-        y = F.interpolate(y, scale_factor=2, mode='nearest')
         y = self.conv(y)
 
         return y
