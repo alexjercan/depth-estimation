@@ -83,12 +83,12 @@ class UpProjBlock(nn.Module):
     def forward(self, x):
         x = self.block1(x)
         
-        y = self.block2(x)
-        y = self.bn3(self.conv3(y))
+        # y = self.block2(x)
+        # y = self.bn3(self.conv3(y))
 
-        y = y + self.bn4(self.conv4(x))
+        # y = x + self.bn4(self.conv4(y))
         
-        return y
+        return x
 
 
 class BasicBlock(nn.Module):
