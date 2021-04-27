@@ -61,8 +61,7 @@ def test(model=None, config=None):
             total_step_val += left_img.shape[0]
             error_avg = avg_error(error_sum_val, error_result, total_step_val, left_img.shape[0])
 
-            loop.set_postfix(loss=loss_fn.show())
-
+    loop.close()
     print_single_error(epoch, 0, loss_fn.show(), error_avg)
 
 if __name__ == "__main__":

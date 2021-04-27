@@ -40,7 +40,7 @@ def train_one_epoch(model, dataloader, loss_fn, solver, epoch_idx):
         solver.step()
 
         loop.set_postfix(loss=loss_fn.show(), epoch=epoch_idx)
-
+    loop.close()
 
 def train(config=None, config_test=None):
     torch.backends.cudnn.benchmark = True
