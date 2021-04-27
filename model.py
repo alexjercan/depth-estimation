@@ -71,24 +71,26 @@ class CNNBlockT(nn.Module):
 class UpProjBlock(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(UpProjBlock, self).__init__()
-        self.block1 = CNNBlockT(in_channels, out_channels, kernel_size=3, stride=2, padding=1, output_padding=1, bias=False)
+        aux_channels = out_channels // 4
         
-        self.block2 = CNNBlock(out_channels, out_channels, kernel_size=5, stride=1, padding=2, bias=False)
-        self.conv3 = nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=1, padding=1, bias=False)
+        self.block1 = CNNBlockT(in_channels, aux_channels, kernel_size=3, stride=2, padding=1, output_padding=1, bias=False)
+        
+        self.block2 = CNNBlock(aux_channels, aux_channels, kernel_size=5, stride=1, padding=2, bias=False)
+        self.conv3 = nn.Conv2d(aux_channels, out_channels, kernel_size=3, stride=1, padding=1, bias=False)
         self.bn3 = nn.BatchNorm2d(out_channels)
         
-        self.conv4 = nn.Conv2d(out_channels, out_channels, kernel_size=5, stride=1, padding=2, bias=False)
+        self.conv4 = nn.Conv2d(aux_channels, out_channels, kernel_size=5, stride=1, padding=2, bias=False)
         self.bn4 = nn.BatchNorm2d(out_channels)
         
     def forward(self, x):
         x = self.block1(x)
         
-        # y = self.block2(x)
-        # y = self.bn3(self.conv3(y))
+        y = self.block2(x)
+        y = self.bn3(self.conv3(y))
 
-        # y = x + self.bn4(self.conv4(y))
+        y = y + self.bn4(self.conv4(x))
         
-        return x
+        return y
 
 
 class BasicBlock(nn.Module):
