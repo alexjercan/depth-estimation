@@ -58,7 +58,7 @@ def avg_error(error_sum, error_step, total_step, batch_size):
                  'DELTA1.02':0, 'DELTA1.05':0, 'DELTA1.10':0, \
                  'DELTA1.25':0, 'DELTA1.25^2':0, 'DELTA1.25^3':0,}
     for item, value in error_step.items():
-        error_sum[item] += value.item() * batch_size
+        error_sum[item] += value * batch_size
         error_avg[item] = error_sum[item] / float(total_step)
     return error_avg
 
