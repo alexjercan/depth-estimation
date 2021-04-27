@@ -51,7 +51,7 @@ class CNNBlock(nn.Module):
         super(CNNBlock, self).__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, **kwargs)
         self.bn = nn.BatchNorm2d(out_channels)
-        self.relu = nn.ReLU(inplace=True)
+        self.relu = nn.LeakyReLU(0.2, inplace=True)
 
     def forward(self, x):
         return self.relu(self.bn(self.conv(x)))
@@ -62,7 +62,7 @@ class CNNBlockT(nn.Module):
         super(CNNBlockT, self).__init__()
         self.conv = nn.ConvTranspose2d(in_channels, out_channels, **kwargs)
         self.bn = nn.BatchNorm2d(out_channels)
-        self.relu = nn.ReLU(inplace=True)
+        self.relu = nn.LeakyReLU(0.2, inplace=True)
 
     def forward(self, x):
         return self.relu(self.bn(self.conv(x)))
@@ -82,6 +82,8 @@ class UpProjBlock(nn.Module):
         self.conv4 = nn.Conv2d(aux_channels, out_channels, kernel_size=5, stride=1, padding=2, bias=False)
         self.bn4 = nn.BatchNorm2d(out_channels)
         
+        self.relu = nn.LeakyReLU(0.2, inplace=True)
+        
     def forward(self, x):
         x = self.block1(x)
         
@@ -89,6 +91,7 @@ class UpProjBlock(nn.Module):
         y = self.bn3(self.conv3(y))
 
         y = y + self.bn4(self.conv4(x))
+        y = self.relu(y)
         
         return y
 
@@ -108,7 +111,7 @@ class BasicBlock(nn.Module):
         # Both self.conv1 and self.downsample layers downsample the input when stride != 1
         self.conv1 = conv3x3(inplanes, planes, stride)
         self.bn1 = norm_layer(planes)
-        self.relu = nn.ReLU(inplace=True)
+        self.relu = nn.LeakyReLU(0.2, inplace=True)
         self.conv2 = conv3x3(planes, planes)
         self.bn2 = norm_layer(planes)
         self.downsample = downsample
@@ -155,7 +158,7 @@ class Bottleneck(nn.Module):
         self.bn2 = norm_layer(width)
         self.conv3 = conv1x1(width, planes * self.expansion)
         self.bn3 = norm_layer(planes * self.expansion)
-        self.relu = nn.ReLU(inplace=True)
+        self.relu = nn.LeakyReLU(0.2, inplace=True)
         self.downsample = downsample
         self.stride = stride
 
@@ -206,7 +209,7 @@ class ResNet(nn.Module):
         self.conv1 = nn.Conv2d(3, self.inplanes, kernel_size=7, stride=2, padding=3,
                                bias=False)
         self.bn1 = norm_layer(self.inplanes)
-        self.relu = nn.ReLU(inplace=True)
+        self.relu = nn.LeakyReLU(0.2, inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
         self.layer1 = self._make_layer(block, 64, layers[0])
         self.layer2 = self._make_layer(block, 128, layers[1], stride=2,
@@ -298,17 +301,6 @@ def resnet50(pretrained=False, progress=True, **kwargs):
                    **kwargs)
 
 
-class FCNHead(nn.Sequential):
-    def __init__(self, in_channels, channels):
-        inter_channels = in_channels // 4
-        layers = [
-            CNNBlock(in_channels, inter_channels, kernel_size=3, padding=1, bias=False),
-            nn.Conv2d(inter_channels, channels, 1)
-        ]
-
-        super(FCNHead, self).__init__(*layers)
-
-
 class DecoderFCN(nn.Module):
     def __init__(self, out_channels):
         super(DecoderFCN, self).__init__()
@@ -317,14 +309,16 @@ class DecoderFCN(nn.Module):
         self.layer2 = UpProjBlock(1024, 512)
         self.layer3 = UpProjBlock(512, 256)
         self.layer4 = UpProjBlock(256, 64)
+        self.layer5 = UpProjBlock(64, 32)
         
-        self.conv = nn.ConvTranspose2d(64, out_channels, kernel_size=7, stride=2, padding=3, output_padding=1, bias=False)
+        self.conv = nn.Conv2d(32, out_channels, kernel_size=3, stride=1, padding=1)
 
     def forward(self, x):
         y = self.layer1(x)
         y = self.layer2(y)
         y = self.layer3(y)
         y = self.layer4(y)
+        y = self.layer5(y)
 
         y = self.conv(y)
 
@@ -335,14 +329,18 @@ class Model(nn.Module):
     def __init__(self, **kwargs):
         super(Model, self).__init__()
         self.feature = resnet50(**kwargs)
-
+        
+        self.c_feature = CNNBlock(4096, 2048, kernel_size=3, stride=1, padding=1, bias=False)
+        
         self.depthFCN = DecoderFCN(1)
         self.normalsFCN = DecoderFCN(3)
 
     def forward(self, left_image, right_image):
         featureL = self.feature(left_image)
         featureR = self.feature(right_image)
-        feature = featureL + featureR
+
+        feature = torch.cat((featureL, featureR), dim=1)
+        feature = self.c_feature(feature)
 
         depth = self.depthFCN(feature)
         norm = self.normalsFCN(feature)
