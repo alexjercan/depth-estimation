@@ -34,7 +34,7 @@ def evaluate_error(pred_depth, gt_depth):
     n_valid_element = float(_gt_depth.size(0))
 
     if n_valid_element > 0:
-        n_valid_element = torch.Tensor(n_valid_element, device=pred_depth.device)
+        n_valid_element = torch.tensor(n_valid_element, device=pred_depth.device)
         diff_mat = torch.abs(_gt_depth-_pred_depth)
         rel_mat = torch.div(diff_mat, _gt_depth)
         error['MSE'] = torch.div(torch.sum(torch.pow(diff_mat, 2)), n_valid_element)
