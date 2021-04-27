@@ -312,7 +312,7 @@ class DecoderFCN(nn.Module):
         y = self.layer3(y)
         y = self.layer4(y)
 
-        y = F.interpolate(x, scale_factor=32, mode='nearest')
+        y = F.interpolate(y, scale_factor=2, mode='nearest')
         y = self.conv(y)
 
         return y
