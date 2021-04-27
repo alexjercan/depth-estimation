@@ -305,7 +305,7 @@ def resnet50(pretrained=False, progress=True, **kwargs):
 class DecoderFCN(nn.Module):
     def __init__(self, out_channels):
         super(DecoderFCN, self).__init__()
-        self.layer1 = UpProjBlock(2048, 1024) # , kernel_size=1, bias=False)
+        self.layer1 = CNNBlock(2048, 1024, kernel_size=1, bias=False)
         self.layer2 = UpProjBlock(1024, 512)
         self.layer3 = UpProjBlock(512, 256)
         self.layer4 = UpProjBlock(256, 128)
@@ -321,7 +321,7 @@ class DecoderFCN(nn.Module):
         y = self.layer5(y)
 
         y = self.conv(y)
-        # y = F.interpolate(y, scale_factor=2, mode='bilinear', align_corners=False)
+        y = F.interpolate(y, scale_factor=2, mode='bilinear', align_corners=False)
 
         return y
 
