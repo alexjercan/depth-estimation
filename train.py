@@ -23,8 +23,6 @@ from dataset import create_dataloader
 
 def train_one_epoch(model, dataloader, loss_fn, solver, epoch_idx):
     loop = tqdm(dataloader, leave=True)
-    losses = []
-    item_losses = []
 
     for _, (left_img, right_img, left_depth, right_depth, left_normal, right_normal) in enumerate(loop):
         left_img = left_img.to(DEVICE, non_blocking=True)
@@ -35,18 +33,13 @@ def train_one_epoch(model, dataloader, loss_fn, solver, epoch_idx):
         right_normal = right_normal.to(DEVICE, non_blocking=True)
 
         predictions = model(left_img, right_img)
-        item_loss, loss = loss_fn(predictions, (left_depth, left_normal))
-
-        losses.append(loss.item())
-        item_losses.append([il.item() for il in item_loss])
+        loss = loss_fn(predictions, (left_depth, left_normal))
 
         model.zero_grad()
         loss.backward()
         solver.step()
 
-        mean_loss = sum(losses) / len(losses)
-        mean_item_loss = [sum(il) / len(losses) for il in zip(*item_losses)]
-        loop.set_postfix(loss=mean_loss, item_losses=mean_item_loss, epoch=epoch_idx)
+        loop.set_postfix(loss=loss_fn.show(), epoch=epoch_idx)
 
 
 def train(config=None, config_test=None):

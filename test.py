@@ -5,6 +5,7 @@
 # References:
 #
 
+from metrics import MetricFunction
 import torch
 import argparse
 from tqdm import tqdm
@@ -30,10 +31,9 @@ def test(model=None, config=None):
         _, model = load_checkpoint(model, config.CHECKPOINT_FILE, DEVICE)
 
     loss_fn = LossFunction()
+    metric_fn = MetricFunction()
 
     loop = tqdm(dataloader, leave=True)
-    losses = []
-    item_losses = []
 
     model.eval()
 
@@ -47,14 +47,10 @@ def test(model=None, config=None):
             right_normal = right_normal.to(DEVICE, non_blocking=True)
             
             predictions = model(left_img, right_img)
-            item_loss, loss = loss_fn(predictions, (left_depth, left_normal))
-            
-            losses.append(loss.item())
-            item_losses.append([il.item() for il in item_loss])
+            loss_fn(predictions, (left_depth, left_normal))
+            metric_fn(predictions, (left_depth, left_normal))
 
-            mean_loss = sum(losses) / len(losses)
-            mean_item_loss = [sum(il) / len(losses) for il in zip(*item_losses)]
-            loop.set_postfix(loss=mean_loss, item_losses=mean_item_loss)
+            loop.set_postfix(loss=loss_fn.show(), metric=metric_fn.show())
 
 
 if __name__ == "__main__":

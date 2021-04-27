@@ -10,6 +10,7 @@
 # - https://github.com/xjqi/GeoNet
 # - https://openaccess.thecvf.com/content_ECCV_2018/papers/Xinjing_Cheng_Depth_Estimation_via_ECCV_2018_paper.pdf
 
+from collections import defaultdict
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -354,14 +355,38 @@ class LossFunction(nn.Module):
         self.depth_loss = nn.L1Loss(reduction='mean')
         self.normal_loss = nn.L1Loss(reduction='mean')
 
+        self.item_losses = defaultdict(list)
+        self.losses = []
+
     def forward(self, predictions, targets):
         (depth_p, normal_p) = predictions
         (depth_gt, normal_gt) = targets
                 
-        depth_loss = self.depth_loss(depth_p, depth_gt) * 1.0
-        normal_loss = self.normal_loss(normal_p, normal_gt) * 1.0
+        item_losses = {'depth': self.depth_loss(depth_p, depth_gt) * 1.0, 
+                       'normal': self.normal_loss(normal_p, normal_gt) * 1.0}
+        loss = sum(item_losses.values())
         
-        return [depth_loss, normal_loss], depth_loss + normal_loss
+        for s, il in item_losses.items():
+            self.item_losses[s].append(il.item())
+        self.losses.append(loss.item())
+        
+        return loss
+    
+    def show(self):
+        mean_item_losses = {s: sum(il) / len(il) for s, il in self.item_losses.items()}
+        mean_item_losses = " ".join(f'{s}:{il:.4f}' for s, il in mean_item_losses.items())
+        
+        mean_loss = sum(self.losses) / len(self.losses)
+        return f'(total:{mean_loss:.4f} {mean_item_losses})'
+
+
+class RMSELoss(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.mse = nn.MSELoss(reduction='mean')
+
+    def forward(self, predictions, targets):        
+        return torch.sqrt(self.mse(predictions, targets))
 
 
 if __name__ == "__main__":
