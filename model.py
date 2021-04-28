@@ -355,29 +355,24 @@ class LossFunction(nn.Module):
         self.depth_loss = nn.L1Loss(reduction='mean')
         self.normal_loss = nn.L1Loss(reduction='mean')
 
-        self.item_loss_values = defaultdict(list)
-        self.loss_values = []
+        self.depth_loss_val = 0
+        self.normal_loss_val = 0
 
     def forward(self, predictions, targets):
         (depth_p, normal_p) = predictions
         (depth_gt, normal_gt) = targets
                 
-        item_loss_values = {'depth': self.depth_loss(depth_p, depth_gt) * 1.0, 
-                       'normal': self.normal_loss(normal_p, normal_gt) * 1.0}
-        for s, il in item_loss_values.items():
-            self.item_loss_values[s].append(il.item())
+        depth = self.depth_loss(depth_p, depth_gt) * 1.0
+        normal = self.normal_loss(normal_p, normal_gt) * 1.0
 
-        loss = sum(item_loss_values.values())        
-        self.loss_values.append(loss.item())
-        
-        return loss
+        self.depth_loss_val = depth.item()
+        self.normal_loss_val = normal.item()
+
+        return depth + normal
     
     def show(self):
-        mean_item_loss_values = {s: sum(il) / len(il) for s, il in self.item_loss_values.items()}
-        mean_item_loss_values = " ".join(f'{s}:{il:.4f}' for s, il in mean_item_loss_values.items())
-        
-        mean_loss = sum(self.loss_values) / len(self.loss_values)
-        return f'(total:{mean_loss:.4f} {mean_item_loss_values})'
+        loss = self.depth_loss_val + self.normal_loss_val
+        return f'(total:{loss:.4f} depth:{self.depth_loss_val} normal:{self.normal_loss_val})'
 
 
 if __name__ == "__main__":

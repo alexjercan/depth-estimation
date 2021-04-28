@@ -5,7 +5,7 @@
 # References:
 #
 
-from metrics import avg_error, metric_function, print_single_error
+from metrics import MetricFunction, print_single_error
 import torch
 import argparse
 from tqdm import tqdm
@@ -32,14 +32,7 @@ def test(model=None, config=None):
         epoch, model = load_checkpoint(model, config.CHECKPOINT_FILE, DEVICE)
 
     loss_fn = LossFunction()
-    
-    total_step_val = 0
-    error_sum_val = {'MSE':0, 'RMSE':0, 'ABS_REL':0, 'LG10':0, 'MAE':0,\
-                     'DELTA1.02':0, 'DELTA1.05':0, 'DELTA1.10':0, \
-                     'DELTA1.25':0, 'DELTA1.25^2':0, 'DELTA1.25^3':0}
-    error_avg = {'MSE':0, 'RMSE':0, 'ABS_REL':0, 'LG10':0, 'MAE':0,\
-                 'DELTA1.02':0, 'DELTA1.05':0, 'DELTA1.10':0, \
-                 'DELTA1.25':0, 'DELTA1.25^2':0, 'DELTA1.25^3':0}
+    metric_fn = MetricFunction(config.BATCH_SIZE)
 
     loop = tqdm(dataloader, leave=True)
 
@@ -56,13 +49,10 @@ def test(model=None, config=None):
             
             predictions = model(left_img, right_img)
             loss_fn(predictions, (left_depth, left_normal))
-            error_result = metric_function(predictions, (left_depth, left_normal))
-            
-            total_step_val += left_img.shape[0]
-            error_avg = avg_error(error_sum_val, error_result, total_step_val, left_img.shape[0])
+            metric_fn.evaluate(predictions, (left_depth, left_normal))
 
     loop.close()
-    print_single_error(epoch, 0, loss_fn.show(), error_avg)
+    print_single_error(epoch, loss_fn.show(), metric_fn.show())
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='test model')
