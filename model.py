@@ -116,7 +116,7 @@ class UNetFCN(nn.Module):
         x = self.up_block6(x1, x)
 
         x = self.relu(self.last_bn(self.last_conv1(x)))
-        x = self.relu(self.last_conv2(x))
+        x = self.last_conv2(x)
         return x
 
 
