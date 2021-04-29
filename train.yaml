@@ -15,7 +15,7 @@ MILESTONES: [10,20,30]
 GAMMA: 0.2
 
 NUM_EPOCHS: 40
-TEST: False
+TEST: True
 OUT_PATH: "./runs"
 LOAD_MODEL: False
 SAVE_MODEL: False

@@ -5,11 +5,13 @@
 # References:
 #
 
-from metrics import MetricFunction, print_single_error
 import torch
 import argparse
-from tqdm import tqdm
+import albumentations as A
 
+from albumentations.pytorch import ToTensorV2
+from tqdm import tqdm
+from metrics import MetricFunction, print_single_error
 from config import parse_test_config, DEVICE, read_yaml_config
 from model import Model, LossFunction
 from general import load_checkpoint
@@ -22,8 +24,21 @@ def test(model=None, config=None):
 
     config = parse_test_config() if not config else config
 
+    transform = A.Compose(
+        [
+            ToTensorV2(),
+        ],
+        additional_targets={
+        'right_img': 'image',
+        'left_depth': 'image',
+        'right_depth': 'image',
+        'left_normal': 'image',
+        'right_normal': 'image',
+        }
+    )
+
     _, dataloader = create_dataloader(config.DATASET_ROOT, config.JSON_PATH, 
-                                      batch_size=config.BATCH_SIZE, img_size=config.IMAGE_SIZE,
+                                      batch_size=config.BATCH_SIZE, transform=transform,
                                       workers=config.WORKERS, pin_memory=config.PIN_MEMORY, shuffle=config.SHUFFLE)
 
     if not model:

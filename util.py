@@ -14,7 +14,7 @@ from pathlib import Path
 
 
 def load_image(path):
-    img = img2bgr(path)  # BGR
+    img = img2rgb(path)  # RGB
     assert img is not None, 'Image Not Found ' + path
     return img
 
@@ -31,7 +31,7 @@ def load_normal(path):
     return img
 
 
-def img2bgr(path):
+def img2rgb(path):
     if not os.path.isfile(path):
         return None
 
@@ -40,6 +40,7 @@ def img2bgr(path):
     img = img / 255
 
     img = np.array(img).astype(np.float32)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
     return img
 
@@ -88,6 +89,7 @@ def save_predictions(predictions, paths):
         cv2.imwrite(depth_path, depth)
         cv2.imwrite(normal_path, normal)
         
+        plt.axis('off')
         plt.imshow(depth)
         plt.savefig(str(Path(path).with_suffix(".depth.png")))
         plt.imshow(normal)
