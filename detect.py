@@ -5,12 +5,14 @@
 # References:
 #
 
+from albumentations.pytorch.transforms import ToTensorV2
 import torch
 import argparse
+import albumentations as A
 
 from config import parse_detect_config, DEVICE, read_yaml_config
 from model import Model
-from util import save_predictions
+from util import plot_predictions, save_predictions
 from general import load_checkpoint
 from dataset import LoadImages
 
@@ -22,7 +24,7 @@ def generatePredictions(model, dataset):
             right_img = right_img.to(DEVICE, non_blocking=True).unsqueeze(0)
 
             predictions = model(left_img, right_img)
-            yield predictions, path
+            yield (left_img, right_img), predictions, path
 
 
 def detect(model=None, config=None):
@@ -30,7 +32,17 @@ def detect(model=None, config=None):
 
     config = parse_detect_config() if not config else config
 
-    dataset = LoadImages(config.JSON, img_size=config.IMAGE_SIZE)
+    transform = A.Compose(
+        [
+            A.Resize(height=config.IMAGE_SIZE, width=config.IMAGE_SIZE),
+            ToTensorV2(),
+        ],
+        additional_targets={
+            'right_img': 'image',
+        }
+    )
+
+    dataset = LoadImages(config.JSON, transform=transform)
 
     if not model:
         model = Model()
@@ -38,7 +50,8 @@ def detect(model=None, config=None):
         _, model = load_checkpoint(model, config.CHECKPOINT_FILE, DEVICE)
 
     model.eval()
-    for predictions, path in generatePredictions(model, dataset):
+    for images, predictions, path in generatePredictions(model, dataset):
+        plot_predictions(images, predictions, [path])
         save_predictions(predictions, [path])
 
 

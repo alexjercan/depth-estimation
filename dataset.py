@@ -7,7 +7,6 @@
 
 import os
 import json
-from albumentations.augmentations.transforms import RandomResizedCrop
 import torch
 
 from torch.utils.data import Dataset, DataLoader
@@ -74,9 +73,9 @@ class BDataset(Dataset):
         return left_img, right_img, left_depth, right_depth, left_normal, right_normal
 
 class LoadImages():
-    def __init__(self, json_data, img_size=256):
+    def __init__(self, json_data, transform=None):
         self.json_data = json_data
-        self.img_size = img_size
+        self.transform = transform
         self.count = 0
         
     def __len__(self):
@@ -110,10 +109,13 @@ class LoadImages():
     def __transform__(self, data):
         left_img, right_img, output_path = data
         
-        left_img = left_img.transpose(2, 0, 1)
-        right_img = right_img.transpose(2, 0, 1)
+        if self.transform is not None:
+            augmentations = self.transform(image=left_img, right_img=right_img)
+
+            left_img = augmentations["image"]
+            right_img = augmentations["right_img"]
         
-        return torch.from_numpy(left_img), torch.from_numpy(right_img), output_path
+        return left_img, right_img, output_path
 
 
 if __name__ == "__main__":    
@@ -159,6 +161,19 @@ if __name__ == "__main__":
             'right_normal': 'normal',
         }
     )
+    
+    img_transform = A.Compose(
+        [
+            M.MyToTensorV2(),
+        ],
+        additional_targets={
+            'right_img': 'image',
+            'left_depth': 'depth',
+            'right_depth': 'depth',
+            'left_normal': 'normal',
+            'right_normal': 'normal',
+        }
+    )
 
     _, dataloader = create_dataloader("../bdataset_stereo", "train.json", transform=my_transform)
     left_imgs, right_imgs, left_depths, right_depths, left_normals, right_normals = next(iter(dataloader))
@@ -169,11 +184,7 @@ if __name__ == "__main__":
     assert left_depths.shape == (2, 1, 256, 256), f"dataset error {left_depths.shape}"
     assert left_normals.shape == (2, 3, 256, 256), f"dataset error {left_normals.shape}"
     
-    visualize(left_imgs[0].permute(1, 2, 0))
-    visualize(left_depths[0].permute(1, 2, 0))
-    visualize(left_normals[0].permute(1, 2, 0))
-    
-    dataset = LoadImages(JSON)
+    dataset = LoadImages(JSON, transform=img_transform)
     left_img, right_img, path = next(iter(dataset))
     assert left_img.shape == (3, 256, 256), f"dataset error {left_img.shape}"
     assert right_img.shape == (3, 256, 256), f"dataset error {right_img.shape}"
