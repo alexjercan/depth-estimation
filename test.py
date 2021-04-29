@@ -8,8 +8,8 @@
 import torch
 import argparse
 import albumentations as A
+import my_albumentations as M
 
-from albumentations.pytorch import ToTensorV2
 from tqdm import tqdm
 from metrics import MetricFunction, print_single_error
 from config import parse_test_config, DEVICE, read_yaml_config
@@ -26,18 +26,18 @@ def test(model=None, config=None):
 
     transform = A.Compose(
         [
-            ToTensorV2(),
+            M.MyToTensorV2(),
         ],
         additional_targets={
-        'right_img': 'image',
-        'left_depth': 'image',
-        'right_depth': 'image',
-        'left_normal': 'image',
-        'right_normal': 'image',
+            'right_img': 'image',
+            'left_depth': 'depth',
+            'right_depth': 'depth',
+            'left_normal': 'normal',
+            'right_normal': 'normal',
         }
     )
 
-    _, dataloader = create_dataloader(config.DATASET_ROOT, config.JSON_PATH, 
+    _, dataloader = create_dataloader(config.DATASET_ROOT, config.JSON_PATH,
                                       batch_size=config.BATCH_SIZE, transform=transform,
                                       workers=config.WORKERS, pin_memory=config.PIN_MEMORY, shuffle=config.SHUFFLE)
 
@@ -61,7 +61,7 @@ def test(model=None, config=None):
             right_depth = right_depth.to(DEVICE, non_blocking=True)
             left_normal = left_normal.to(DEVICE, non_blocking=True)
             right_normal = right_normal.to(DEVICE, non_blocking=True)
-            
+
             predictions = model(left_img, right_img)
             loss_fn(predictions, (left_depth, left_normal))
             metric_fn.evaluate(predictions, (left_depth, left_normal))
@@ -69,11 +69,12 @@ def test(model=None, config=None):
     loop.close()
     print_single_error(epoch, loss_fn.show(), metric_fn.show())
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='test model')
     parser.add_argument('--test', type=str, default="test.yaml", help='test config file')
     opt = parser.parse_args()
 
     config_test = parse_test_config(read_yaml_config(opt.test))
-    
+
     test(config=config_test)

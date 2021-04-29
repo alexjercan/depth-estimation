@@ -15,7 +15,6 @@ import albumentations as A
 import my_albumentations as M
 
 from tqdm import tqdm
-from albumentations.pytorch import ToTensorV2
 from config import parse_test_config, parse_train_config, DEVICE, read_yaml_config
 from datetime import datetime as dt
 from model import Model, LossFunction
@@ -52,17 +51,19 @@ def train(config=None, config_test=None):
     
     transform = A.Compose(
         [
-            A.RandomResizedCrop(width=config.IMAGE_SIZE, height=config.IMAGE_SIZE),
+            M.MyRandomResizedCrop(width=config.IMAGE_SIZE, height=config.IMAGE_SIZE),
             M.MyHorizontalFlip(p=0.5),
             M.MyVerticalFlip(p=0.1),
-            ToTensorV2(),
+            A.RandomBrightnessContrast(p=0.2),
+            A.RGBShift(p=0.1),
+            M.MyToTensorV2(),
         ],
         additional_targets={
-        'right_img': 'image',
-        'left_depth': 'image',
-        'right_depth': 'image',
-        'left_normal': 'image',
-        'right_normal': 'image',
+            'right_img': 'image',
+            'left_depth': 'depth',
+            'right_depth': 'depth',
+            'left_normal': 'normal',
+            'right_normal': 'normal',
         }
     )
 

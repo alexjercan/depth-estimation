@@ -120,7 +120,6 @@ if __name__ == "__main__":
     from config import JSON, IMAGE_SIZE
     import albumentations as A
     import my_albumentations as M
-    from albumentations.pytorch import ToTensorV2
     import matplotlib.pyplot as plt
     
     def visualize(image):
@@ -131,17 +130,19 @@ if __name__ == "__main__":
 
     my_transform = A.Compose(
         [
-            A.RandomResizedCrop(width=IMAGE_SIZE, height=IMAGE_SIZE),
+            M.MyRandomResizedCrop(width=IMAGE_SIZE, height=IMAGE_SIZE),
             M.MyHorizontalFlip(p=0.5),
             M.MyVerticalFlip(p=0.1),
-            ToTensorV2(),
+            A.RandomBrightnessContrast(p=0.2),
+            A.RGBShift(p=0.1),
+            M.MyToTensorV2(transpose_mask=True),
         ],
         additional_targets={
-        'right_img': 'image',
-        'left_depth': 'image',
-        'right_depth': 'image',
-        'left_normal': 'image',
-        'right_normal': 'image',
+            'right_img': 'image',
+            'left_depth': 'depth',
+            'right_depth': 'depth',
+            'left_normal': 'normal',
+            'right_normal': 'normal',
         }
     )
 
@@ -153,6 +154,10 @@ if __name__ == "__main__":
     assert left_imgs.shape == (2, 3, 256, 256), f"dataset error {left_imgs.shape}"
     assert left_depths.shape == (2, 1, 256, 256), f"dataset error {left_depths.shape}"
     assert left_normals.shape == (2, 3, 256, 256), f"dataset error {left_normals.shape}"
+    
+    visualize(left_imgs[0].permute(1, 2, 0))
+    visualize(left_depths[0].permute(1, 2, 0))
+    visualize(left_normals[0].permute(1, 2, 0))
     
     dataset = LoadImages(JSON)
     left_img, right_img, path = next(iter(dataset))
