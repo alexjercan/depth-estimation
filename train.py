@@ -54,8 +54,22 @@ def train(config=None, config_test=None):
             M.MyRandomResizedCrop(width=config.IMAGE_SIZE, height=config.IMAGE_SIZE),
             M.MyHorizontalFlip(p=0.5),
             M.MyVerticalFlip(p=0.1),
-            A.RandomBrightnessContrast(p=0.2),
-            A.RGBShift(p=0.1),
+            A.OneOf([
+                A.MotionBlur(p=0.2),
+                A.MedianBlur(p=0.1),
+                A.Blur(p=0.1),
+            ], p=0.2),
+            A.OneOf([
+                M.MyOpticalDistortion(p=0.3),
+                M.MyGridDistortion(p=0.1),
+                M.MyIAAPiecewiseAffine(p=0.3),
+            ], p=0.2),
+            A.OneOf([
+                A.IAASharpen(),
+                A.IAAEmboss(),
+                A.RandomBrightnessContrast(),            
+            ], p=0.3),
+            A.HueSaturationValue(p=0.3),
             M.MyToTensorV2(),
         ],
         additional_targets={
