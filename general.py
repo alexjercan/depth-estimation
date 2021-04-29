@@ -40,5 +40,4 @@ def save_checkpoint(epoch_idx, model, dir_checkpoints):
         'epoch_idx': epoch_idx,
         'state_dict': model.state_dict(),
     }
-    output_path="./normal.pth"
     torch.save(checkpoint, output_path)
