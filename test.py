@@ -18,6 +18,25 @@ from general import load_checkpoint
 from dataset import create_dataloader
 
 
+def run_test(model, dataloader, loss_fn, metric_fn):
+    loop = tqdm(dataloader, leave=True)
+    
+    for _, (left_img, right_img, left_depth, right_depth, left_normal, right_normal) in enumerate(loop):
+        with torch.no_grad():
+            left_img = left_img.to(DEVICE, non_blocking=True)
+            right_img = right_img.to(DEVICE, non_blocking=True)
+            left_depth = left_depth.to(DEVICE, non_blocking=True)
+            right_depth = right_depth.to(DEVICE, non_blocking=True)
+            left_normal = left_normal.to(DEVICE, non_blocking=True)
+            right_normal = right_normal.to(DEVICE, non_blocking=True)
+
+            predictions = model(left_img, right_img)
+            loss_fn(predictions, (left_depth, left_normal))
+            metric_fn.evaluate(predictions, (left_depth, left_normal))
+
+    loop.close()
+
+
 def test(model=None, config=None):
     epoch = 0
     torch.backends.cudnn.benchmark = True
@@ -49,24 +68,8 @@ def test(model=None, config=None):
     loss_fn = LossFunction()
     metric_fn = MetricFunction(config.BATCH_SIZE)
 
-    loop = tqdm(dataloader, leave=True)
-
     model.eval()
-
-    for _, (left_img, right_img, left_depth, right_depth, left_normal, right_normal) in enumerate(loop):
-        with torch.no_grad():
-            left_img = left_img.to(DEVICE, non_blocking=True)
-            right_img = right_img.to(DEVICE, non_blocking=True)
-            left_depth = left_depth.to(DEVICE, non_blocking=True)
-            right_depth = right_depth.to(DEVICE, non_blocking=True)
-            left_normal = left_normal.to(DEVICE, non_blocking=True)
-            right_normal = right_normal.to(DEVICE, non_blocking=True)
-
-            predictions = model(left_img, right_img)
-            loss_fn(predictions, (left_depth, left_normal))
-            metric_fn.evaluate(predictions, (left_depth, left_normal))
-
-    loop.close()
+    run_test(model, dataloader, loss_fn, metric_fn)
     print_single_error(epoch, loss_fn.show(), metric_fn.show())
 
 
