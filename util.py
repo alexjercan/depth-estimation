@@ -74,6 +74,23 @@ def exr2normal(path):
     return img
 
 
+def plot_predictions(predictions, paths):
+    depth_ps, normal_ps = predictions
+    depth_ps = depth_ps.cpu().numpy()
+    normal_ps = normal_ps.cpu().numpy()
+
+    for depth_p, normal_p, path in zip(depth_ps, normal_ps, paths):
+        depth = depth_p.transpose(1, 2, 0)
+        normal = normal_p.transpose(1, 2, 0)
+        
+        fig, (ax1, ax2) = plt.subplots(1, 2)
+        fig.suptitle(path)
+        ax1.axis('off')
+        ax1.imshow(depth)
+        ax2.axis('off')
+        ax2.imshow(normal)
+        plt.show()
+
 def save_predictions(predictions, paths):
     depth_ps, normal_ps = predictions
     depth_ps = depth_ps.cpu().numpy()

@@ -15,6 +15,16 @@ from general import load_checkpoint
 from dataset import LoadImages
 
 
+def generatePredictions(model, dataset):
+    for left_img, right_img, path in dataset:
+        with torch.no_grad():
+            left_img = left_img.to(DEVICE, non_blocking=True).unsqueeze(0)
+            right_img = right_img.to(DEVICE, non_blocking=True).unsqueeze(0)
+
+            predictions = model(left_img, right_img)
+            yield predictions, path
+
+
 def detect(model=None, config=None):
     torch.backends.cudnn.benchmark = True
 
@@ -27,14 +37,9 @@ def detect(model=None, config=None):
         model = model.to(DEVICE)
         _, model = load_checkpoint(model, config.CHECKPOINT_FILE, DEVICE)
 
-    for left_img, right_img, path in dataset:
-        with torch.no_grad():
-            left_img = left_img.to(DEVICE, non_blocking=True).unsqueeze(0)
-            right_img = right_img.to(DEVICE, non_blocking=True).unsqueeze(0)
-
-            predictions = model(left_img, right_img)
-            
-            save_predictions(predictions, [path])
+    model.eval()
+    for predictions, path in generatePredictions(model, dataset):
+        save_predictions(predictions, [path])
 
 
 if __name__ == "__main__":
