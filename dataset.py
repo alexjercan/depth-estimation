@@ -135,8 +135,8 @@ if __name__ == "__main__":
             M.MyVerticalFlip(p=0.1),
             A.OneOf([
                 A.MotionBlur(p=0.2),
-                A.MedianBlur(p=0.1),
-                A.Blur(p=0.1),
+                A.MedianBlur(blur_limit=3, p=0.1),
+                A.Blur(blur_limit=3, p=0.1),
             ], p=0.2),
             A.OneOf([
                 M.MyOpticalDistortion(p=0.3),
