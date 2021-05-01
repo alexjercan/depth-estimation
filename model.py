@@ -10,7 +10,9 @@
 # - https://github.com/xjqi/GeoNet
 # - https://openaccess.thecvf.com/content_ECCV_2018/papers/Xinjing_Cheng_Depth_Estimation_via_ECCV_2018_paper.pdf
 # - https://github.com/EPFL-VILAB/XTConsistency/blob/master/modules/unet.py
-#
+# - https://arxiv.org/pdf/1606.00373.pdf
+# - https://arxiv.org/pdf/2010.06626v2.pdf
+# - https://github.com/dontLoveBugs/FCRN_pytorch/blob/master/criteria.py#L37
 
 import torch
 import torch.nn as nn
@@ -125,19 +127,25 @@ class UNetFCN(nn.Module):
 class Model(nn.Module):
     def __init__(self, **kwargs):
         super(Model, self).__init__()
-        self.feature = UNetFeature(**kwargs)
+        self.feature1 = UNetFeature(**kwargs)
+        self.feature2 = UNetFeature(**kwargs)
         
         self.depthFCN = UNetFCN(out_channels=1)
         self.normalsFCN = UNetFCN(out_channels=3)
 
     def forward(self, left_image, right_image):
-        featureL = self.feature(left_image)
-        featureR = self.feature(right_image)
+        featureL = self.feature1(left_image)
+        featureR = self.feature1(right_image)
 
-        feature = list(map(lambda x: torch.cat(x, dim=1), zip(featureL, featureR)))
+        feature1 = list(map(lambda x: torch.cat(x, dim=1), zip(featureL, featureR)))
 
-        depth = self.depthFCN(*feature)
-        norm = self.normalsFCN(*feature)
+        featureL = self.feature2(left_image)
+        featureR = self.feature2(right_image)
+
+        feature2 = list(map(lambda x: torch.cat(x, dim=1), zip(featureL, featureR)))
+
+        depth = self.depthFCN(*feature1)
+        norm = self.normalsFCN(*feature2)
 
         return depth, norm
 
@@ -146,14 +154,13 @@ class BerHuLoss(nn.Module):
     def __init__(self, threshold=0.2):
         super(BerHuLoss, self).__init__()
         self.threshold = threshold
+        self.eps = 1e-8
     
     def forward(self, predictions, targets):
-        g = self.threshold * torch.max(predictions - targets)
+        h = (targets - predictions).abs()
+        g = self.threshold * torch.max(h)
         
-        h = targets - predictions
-        h_abs = h.abs()
-
-        loss = torch.where(h_abs <= g, h_abs, (h**2+g**2)/(2*g))
+        loss = torch.where(h <= g, h, (h**2+g**2)/(2*g + self.eps))
         return loss.mean()
 
 
