@@ -19,8 +19,8 @@ WORKERS = 8
 PIN_MEMORY = True
 
 LEARNING_RATE = 0.001
-BETAS = [0.9, 0.999]
-EPS = 0.00001
+MOMENTUM = 0.9
+DAMPENING = 0.1
 WEIGHT_DECAY = 0.0001
 
 MILESTONES = [150]
@@ -49,8 +49,8 @@ def parse_train_config(config=None):
     c.SHUFFLE = config.get("SHUFFLE", True)
 
     c.LEARNING_RATE = config.get("LEARNING_RATE", LEARNING_RATE)
-    c.BETAS = config.get("BETAS", BETAS)
-    c.EPS = config.get("EPS", EPS)
+    c.MOMENTUM = config.get("MOMENTUM", MOMENTUM)
+    c.DAMPENING = config.get("DAMPENING", DAMPENING)
     c.WEIGHT_DECAY = config.get("WEIGHT_DECAY", WEIGHT_DECAY)
     
     c.MILESTONES = config.get("MILESTONES", MILESTONES)
