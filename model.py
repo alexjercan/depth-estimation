@@ -198,7 +198,7 @@ class LossFunction(nn.Module):
         (depth_gt, normal_gt) = targets
                 
         depth = self.depth_loss(depth_p, depth_gt) * 1.0
-        normal = self.normal_loss(normal_p, normal_gt) * 1.0
+        normal = self.normal_loss(normal_p, normal_gt) * 10.0
         self.depth_loss_val = depth.item()
         self.normal_loss_val = normal.item()
 

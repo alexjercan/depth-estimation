@@ -58,12 +58,12 @@ def evaluate_error_depth(pred_depth, gt_depth):
         y_over_z = torch.div(_gt_depth, _pred_depth)
         z_over_y = torch.div(_pred_depth, _gt_depth)
         max_ratio = torch.max(y_over_z, z_over_y)
-        error['D_DELTA1.02'] = torch.div(torch.sum(max_ratio < 1.02), n_valid_element)
-        error['D_DELTA1.05'] = torch.div(torch.sum(max_ratio < 1.05), n_valid_element)
-        error['D_DELTA1.10'] = torch.div(torch.sum(max_ratio < 1.10), n_valid_element)
-        error['D_DELTA1.25'] = torch.div(torch.sum(max_ratio < 1.25), n_valid_element)
-        error['D_DELTA1.25^2'] = torch.div(torch.sum(max_ratio < 1.25**2), n_valid_element)
-        error['D_DELTA1.25^3'] = torch.div(torch.sum(max_ratio < 1.25**3), n_valid_element)
+        error['D_DELTA1.02'] = torch.div(torch.sum(max_ratio <= 1.02), n_valid_element)
+        error['D_DELTA1.05'] = torch.div(torch.sum(max_ratio <= 1.05), n_valid_element)
+        error['D_DELTA1.10'] = torch.div(torch.sum(max_ratio <= 1.10), n_valid_element)
+        error['D_DELTA1.25'] = torch.div(torch.sum(max_ratio <= 1.25), n_valid_element)
+        error['D_DELTA1.25^2'] = torch.div(torch.sum(max_ratio <= 1.25**2), n_valid_element)
+        error['D_DELTA1.25^3'] = torch.div(torch.sum(max_ratio <= 1.25**3), n_valid_element)
     return error
 
 
@@ -79,9 +79,9 @@ def evaluate_error_normal(pred_normal, gt_normal):
     error['N_MAE'] = torch.mean(angular_error)
     error['N_MME'] = torch.median(angular_error)
     
-    error['N_TANGLE11.25'] = torch.mean((angular_error < radians(11.25)).float())
-    error['N_TANGLE22.5'] = torch.mean((angular_error < radians(22.5)).float())
-    error['N_TANGLE30.0'] = torch.mean((angular_error < radians(30.0)).float())
+    error['N_TANGLE11.25'] = torch.mean((angular_error <= radians(11.25)).float())
+    error['N_TANGLE22.5'] = torch.mean((angular_error <= radians(22.5)).float())
+    error['N_TANGLE30.0'] = torch.mean((angular_error <= radians(30.0)).float())
     
     return error
 
