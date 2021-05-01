@@ -16,6 +16,7 @@
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 
 class UNetBlock(nn.Module):
@@ -125,27 +126,21 @@ class UNetFCN(nn.Module):
 
 
 class Model(nn.Module):
-    def __init__(self, **kwargs):
+    def __init__(self):
         super(Model, self).__init__()
-        self.feature1 = UNetFeature(**kwargs)
-        self.feature2 = UNetFeature(**kwargs)
+        self.feature = UNetFeature()
         
         self.depthFCN = UNetFCN(out_channels=1)
         self.normalsFCN = UNetFCN(out_channels=3)
 
     def forward(self, left_image, right_image):
-        featureL = self.feature1(left_image)
-        featureR = self.feature1(right_image)
+        featureL = self.feature(left_image)
+        featureR = self.feature(right_image)
 
-        feature1 = list(map(lambda x: torch.cat(x, dim=1), zip(featureL, featureR)))
+        feature = list(map(lambda x: torch.cat(x, dim=1), zip(featureL, featureR)))
 
-        featureL = self.feature2(left_image)
-        featureR = self.feature2(right_image)
-
-        feature2 = list(map(lambda x: torch.cat(x, dim=1), zip(featureL, featureR)))
-
-        depth = self.depthFCN(*feature1)
-        norm = self.normalsFCN(*feature2)
+        depth = self.depthFCN(*feature)
+        norm = self.normalsFCN(*feature)
 
         return depth, norm
 
@@ -154,13 +149,12 @@ class BerHuLoss(nn.Module):
     def __init__(self, threshold=0.2):
         super(BerHuLoss, self).__init__()
         self.threshold = threshold
-        self.eps = 1e-8
     
     def forward(self, predictions, targets):
         h = (targets - predictions).abs()
         g = self.threshold * torch.max(h)
         
-        loss = torch.where(h <= g, h, (h**2+g**2)/(2*g + self.eps))
+        loss = torch.where(h <= g, h, h**2)
         return loss.mean()
 
 
