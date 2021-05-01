@@ -142,11 +142,26 @@ class Model(nn.Module):
         return depth, norm
 
 
+class BerHuLoss(nn.Module):
+    def __init__(self, threshold=0.2):
+        super(BerHuLoss, self).__init__()
+        self.threshold = threshold
+    
+    def forward(self, predictions, targets):
+        g = self.threshold * torch.max(predictions - targets)
+        
+        h = targets - predictions
+        h_abs = h.abs()
+
+        loss = torch.where(h_abs <= g, h_abs, (h**2+g**2)/(2*g))
+        return loss.mean()
+
+
 class LossFunction(nn.Module):
     def __init__(self):
         super(LossFunction, self).__init__()
-        self.depth_loss = nn.L1Loss(reduction='mean')
-        self.normal_loss = nn.L1Loss(reduction='mean')
+        self.depth_loss = BerHuLoss()
+        self.normal_loss = BerHuLoss()
 
         self.depth_loss_val = 0
         self.normal_loss_val = 0
