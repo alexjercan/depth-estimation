@@ -19,7 +19,7 @@ from dataset import create_dataloader
 
 
 def run_test(model, dataloader, loss_fn, metric_fn):
-    loop = tqdm(dataloader, leave=True)
+    loop = tqdm(dataloader, position=0, leave=True)
     
     for _, (left_img, right_img, left_depth, right_depth, left_normal, right_normal) in enumerate(loop):
         with torch.no_grad():

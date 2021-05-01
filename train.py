@@ -24,7 +24,7 @@ from dataset import create_dataloader
 
 
 def train_one_epoch(model, dataloader, loss_fn, solver, epoch_idx):
-    loop = tqdm(dataloader, leave=True)
+    loop = tqdm(dataloader, position=0, leave=True)
 
     for _, (left_img, right_img, left_depth, right_depth, left_normal, right_normal) in enumerate(loop):
         left_img = left_img.to(DEVICE, non_blocking=True)
