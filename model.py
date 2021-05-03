@@ -125,7 +125,7 @@ class UNetFCN(nn.Module):
         return x
 
 
-class DepthFCN(nn.Module):
+class Model(nn.Module):
     def __init__(self):
         super().__init__()
         self.feature = UNetFeature()
@@ -139,36 +139,6 @@ class DepthFCN(nn.Module):
         depth = self.predict(*feature)
 
         return depth
-
-
-class NormalsFCN(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.feature = UNetFeature()
-        self.predict = UNetFCN(out_channels=3)
-    
-    def forward(self, left_image, right_image):
-        featureL = self.feature(left_image)
-        featureR = self.feature(right_image)
-        
-        feature = list(map(lambda x: torch.cat(x, dim=1), zip(featureL, featureR)))
-        norm = self.predict(*feature)
-
-        return norm
-
-
-class Model(nn.Module):
-    def __init__(self):
-        super(Model, self).__init__()
-        
-        self.depthFCN = DepthFCN()
-        self.normalsFCN = NormalsFCN()
-
-    def forward(self, left_image, right_image):
-        depth = self.depthFCN(left_image, right_image)
-        norm = self.normalsFCN(left_image, right_image)
-
-        return depth, norm
 
 
 class BerHuLoss(nn.Module):
@@ -188,25 +158,21 @@ class LossFunction(nn.Module):
     def __init__(self):
         super(LossFunction, self).__init__()
         self.depth_loss = BerHuLoss()
-        self.normal_loss = nn.SmoothL1Loss()
 
         self.depth_loss_val = 0
-        self.normal_loss_val = 0
 
     def forward(self, predictions, targets):
-        (depth_p, normal_p) = predictions
-        (depth_gt, normal_gt) = targets
+        depth_p = predictions
+        depth_gt = targets
                 
         depth = self.depth_loss(depth_p, depth_gt) * 1.0
-        normal = self.normal_loss(normal_p, normal_gt) * 10.0
         self.depth_loss_val = depth.item()
-        self.normal_loss_val = normal.item()
 
-        return depth + normal
+        return depth
     
     def show(self):
-        loss = self.depth_loss_val + self.normal_loss_val
-        return f'(total:{loss:.4f} depth:{self.depth_loss_val} normal:{self.normal_loss_val})'
+        loss = self.depth_loss_val
+        return f'(total:{loss:.4f})'
 
 
 if __name__ == "__main__":
@@ -214,8 +180,6 @@ if __name__ == "__main__":
     right = torch.rand((4, 3, 256, 256))    
     model = Model()
     pred = model(left, right)
-    assert isinstance(pred, tuple), "Model"
-    assert pred[0].shape == (4, 1, 256, 256), "Model"
-    assert pred[1].shape == (4, 3, 256, 256), "Model"
+    assert pred.shape == (4, 1, 256, 256), "Model"
 
     print("model ok")

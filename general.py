@@ -9,6 +9,10 @@ import os
 import torch
 
 
+def images_to_device(images, device):
+    return (image.to(device, non_blocking=True) for image in images)
+
+
 def init_weights(m):
     if type(m) == torch.nn.Conv2d or type(m) == torch.nn.Conv3d or \
             type(m) == torch.nn.ConvTranspose2d or type(m) == torch.nn.ConvTranspose3d:

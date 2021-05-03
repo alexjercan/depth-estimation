@@ -7,7 +7,6 @@
 # - https://web.eecs.umich.edu/~fouhey/2016/evalSN/evalSN.html
 #
 
-from math import radians
 import torch
 
 
@@ -19,10 +18,10 @@ class MetricFunction():
         self.error_avg = {}
 
     def evaluate(self, predictions, targets):
-        (depth_p, normal_p) = predictions
-        (depth_gt, normal_gt) = targets
+        depth_p = predictions
+        depth_gt = targets
         
-        error_val = dict(evaluate_error_depth(depth_p, depth_gt), **evaluate_error_normal(normal_p, normal_gt))
+        error_val = evaluate_error_depth(depth_p, depth_gt)
         
         self.total_size += self.batch_size
         self.error_avg = avg_error(self.error_sum, error_val, self.total_size, self.batch_size)
@@ -30,12 +29,10 @@ class MetricFunction():
     
     def show(self):
         error = self.error_avg
-        format_str = ('======DEPTH=======\nMSE=%.4f\tRMSE=%.4f\tMAE=%.4f\tABS_REL=%.4f\nDELTA1.02=%.4f\tDELTA1.05=%.4f\tDELTA1.10=%.4f\nDELTA1.25=%.4f\tDELTA1.25^2=%.4f\tDELTA1.25^3=%.4f\n======NORMALS=======\nMSE=%.4f\tRMSE=%.4f\tMAE=%.4f\tMME=%.4f\nTANGLE11.25=%.4f\tTANGLE22.5=%.4f\tTANGLE30.0=%.4f')
+        format_str = ('======DEPTH=======\nMSE=%.4f\tRMSE=%.4f\tMAE=%.4f\tABS_REL=%.4f\nDELTA1.02=%.4f\tDELTA1.05=%.4f\tDELTA1.10=%.4f\nDELTA1.25=%.4f\tDELTA1.25^2=%.4f\tDELTA1.25^3=%.4f')
         return format_str % (error['D_MSE'], error['D_RMSE'], error['D_MAE'],  error['D_ABS_REL'], \
                          error['D_DELTA1.02'], error['D_DELTA1.05'], error['D_DELTA1.10'], \
-                         error['D_DELTA1.25'], error['D_DELTA1.25^2'], error['D_DELTA1.25^3'], \
-                         error['N_MSE'], error['N_RMSE'], error['N_MAE'],  error['N_MME'], \
-                         error['N_TANGLE11.25'], error['N_TANGLE22.5'], error['N_TANGLE30.0'])
+                         error['D_DELTA1.25'], error['D_DELTA1.25^2'], error['D_DELTA1.25^3'])
 
 
 def evaluate_error_depth(pred_depth, gt_depth):
@@ -64,25 +61,6 @@ def evaluate_error_depth(pred_depth, gt_depth):
         error['D_DELTA1.25'] = torch.div(torch.sum(max_ratio <= 1.25), n_valid_element)
         error['D_DELTA1.25^2'] = torch.div(torch.sum(max_ratio <= 1.25**2), n_valid_element)
         error['D_DELTA1.25^3'] = torch.div(torch.sum(max_ratio <= 1.25**3), n_valid_element)
-    return error
-
-
-def evaluate_error_normal(pred_normal, gt_normal):
-    error = {}
-    
-    dot_product = torch.mul(pred_normal, gt_normal).sum(dim=1)
-    angular_error = torch.acos(torch.minimum(torch.tensor(1, device=pred_normal.device), 
-                                             torch.maximum(torch.tensor(-1, device=pred_normal.device), dot_product)))
-
-    error['N_MSE'] = torch.mean(torch.mul(angular_error, angular_error))
-    error['N_RMSE'] = torch.sqrt(error['N_MSE'])
-    error['N_MAE'] = torch.mean(angular_error)
-    error['N_MME'] = torch.median(angular_error)
-    
-    error['N_TANGLE11.25'] = torch.mean((angular_error <= radians(11.25)).float())
-    error['N_TANGLE22.5'] = torch.mean((angular_error <= radians(22.5)).float())
-    error['N_TANGLE30.0'] = torch.mean((angular_error <= radians(30.0)).float())
-    
     return error
 
 

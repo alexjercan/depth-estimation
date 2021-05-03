@@ -7,10 +7,9 @@
 
 import os
 import json
-import torch
 
 from torch.utils.data import Dataset, DataLoader
-from util import load_depth, load_image, load_normal
+from util import load_depth, load_image
 
 
 def create_dataloader(dataset_root, json_path, batch_size=2, transform=None, workers=8, pin_memory=True, shuffle=True):
@@ -44,33 +43,26 @@ class BDataset(Dataset):
         right_img_path = os.path.join(self.dataset_root, self.json_data[index]["imageR"])
         left_depth_path = os.path.join(self.dataset_root, self.json_data[index]["depthL"])
         right_depth_path = os.path.join(self.dataset_root, self.json_data[index]["depthR"])
-        left_normal_path = os.path.join(self.dataset_root, self.json_data[index]["normalL"])
-        right_normal_path = os.path.join(self.dataset_root, self.json_data[index]["normalR"])
 
         left_img = load_image(left_img_path)
         right_img = load_image(right_img_path)
         left_depth = load_depth(left_depth_path)
         right_depth = load_depth(right_depth_path)
-        left_normal = load_normal(left_normal_path)
-        right_normal = load_normal(right_normal_path)
 
-        return left_img, right_img, left_depth, right_depth, left_normal, right_normal
+        return left_img, right_img, left_depth, right_depth
 
     def __transform__(self, data):
-        left_img, right_img, left_depth, right_depth, left_normal, right_normal = data
+        left_img, right_img, left_depth, right_depth = data
         
         if self.transform is not None:
             augmentations = self.transform(image=left_img, right_img=right_img, 
-                                           left_depth=left_depth, right_depth=right_depth, 
-                                           left_normal=left_normal, right_normal=right_normal)
+                                           left_depth=left_depth, right_depth=right_depth)
             left_img = augmentations["image"]
             right_img = augmentations["right_img"]
             left_depth = augmentations["left_depth"]
             right_depth = augmentations["right_depth"]
-            left_normal = augmentations["left_normal"]
-            right_normal = augmentations["right_normal"]
 
-        return left_img, right_img, left_depth, right_depth, left_normal, right_normal
+        return left_img, right_img, left_depth, right_depth
 
 class LoadImages():
     def __init__(self, json_data, transform=None):
@@ -157,8 +149,6 @@ if __name__ == "__main__":
             'right_img': 'image',
             'left_depth': 'depth',
             'right_depth': 'depth',
-            'left_normal': 'normal',
-            'right_normal': 'normal',
         }
     )
     
@@ -170,19 +160,15 @@ if __name__ == "__main__":
             'right_img': 'image',
             'left_depth': 'depth',
             'right_depth': 'depth',
-            'left_normal': 'normal',
-            'right_normal': 'normal',
         }
     )
 
     _, dataloader = create_dataloader("../bdataset_stereo", "train.json", transform=my_transform)
-    left_imgs, right_imgs, left_depths, right_depths, left_normals, right_normals = next(iter(dataloader))
+    left_imgs, right_imgs, left_depths, right_depths = next(iter(dataloader))
     assert left_imgs.shape == right_imgs.shape, "dataset error"
     assert left_depths.shape == right_depths.shape, "dataset error"
-    assert right_normals.shape == left_normals.shape, "dataset error"
     assert left_imgs.shape == (2, 3, 256, 256), f"dataset error {left_imgs.shape}"
     assert left_depths.shape == (2, 1, 256, 256), f"dataset error {left_depths.shape}"
-    assert left_normals.shape == (2, 3, 256, 256), f"dataset error {left_normals.shape}"
     
     dataset = LoadImages(JSON, transform=img_transform)
     left_img, right_img, path = next(iter(dataset))

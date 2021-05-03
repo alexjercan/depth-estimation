@@ -20,24 +20,20 @@ from metrics import MetricFunction, print_single_error
 from datetime import datetime as dt
 from model import Model, LossFunction
 from test import test
-from general import init_weights, save_checkpoint, load_checkpoint
+from general import images_to_device, init_weights, save_checkpoint, load_checkpoint
 from dataset import create_dataloader
 
 
 def train_one_epoch(model, dataloader, loss_fn, metric_fn, solver, epoch_idx):
     loop = tqdm(dataloader, position=0, leave=True)
 
-    for _, (left_img, right_img, left_depth, right_depth, left_normal, right_normal) in enumerate(loop):
-        left_img = left_img.to(DEVICE, non_blocking=True)
-        right_img = right_img.to(DEVICE, non_blocking=True)
-        left_depth = left_depth.to(DEVICE, non_blocking=True)
-        right_depth = right_depth.to(DEVICE, non_blocking=True)
-        left_normal = left_normal.to(DEVICE, non_blocking=True)
-        right_normal = right_normal.to(DEVICE, non_blocking=True)
+    for _, images in enumerate(loop):
+        images = images_to_device(images, DEVICE)
+        left_img, right_img, left_depth, _ = images
 
         predictions = model(left_img, right_img)
-        loss = loss_fn(predictions, (left_depth, left_normal))
-        metric_fn.evaluate(predictions, (left_depth, left_normal))
+        loss = loss_fn(predictions, left_depth)
+        metric_fn.evaluate(predictions, left_depth)
 
         model.zero_grad()
         loss.backward()
@@ -71,15 +67,12 @@ def train(config=None, config_test=None):
                 A.IAAEmboss(),
                 A.RandomBrightnessContrast(),            
             ], p=0.3),
-            A.HueSaturationValue(p=0.3),
             M.MyToTensorV2(),
         ],
         additional_targets={
             'right_img': 'image',
             'left_depth': 'depth',
-            'right_depth': 'depth',
-            'left_normal': 'normal',
-            'right_normal': 'normal',
+            'right_depth': 'depth'
         }
     )
 

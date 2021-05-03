@@ -25,12 +25,6 @@ def load_depth(path):
     return img
 
 
-def load_normal(path):
-    img = exr2normal(path)  # 3 channel normal
-    assert img is not None, 'Image Not Found ' + path
-    return img
-
-
 def img2rgb(path):
     if not os.path.isfile(path):
         return None
@@ -60,59 +54,35 @@ def exr2depth(path, maxvalue=80):
     return img
 
 
-def exr2normal(path):
-    if not os.path.isfile(path):
-        return None
-
-    img = cv2.imread(path, cv2.IMREAD_ANYCOLOR | cv2.IMREAD_ANYDEPTH)
-
-    img[img > 1] = 1
-    img[img < 0] = 0
-    
-    img = np.array(img).astype(np.float32).reshape(img.shape[0], img.shape[1], -1)
-
-    return img
-
-
 def plot_predictions(images, predictions, paths):
     left_images, _ = images
-    depth_ps, normal_ps = predictions
+    depth_ps = predictions
     left_images = left_images.cpu().numpy()
     depth_ps = depth_ps.cpu().numpy()
-    normal_ps = normal_ps.cpu().numpy()
 
-    for left_img, depth_p, normal_p, path in zip(left_images, depth_ps, normal_ps, paths):
+    for left_img, depth_p, path in zip(left_images, depth_ps, paths):
         left_img = left_img.transpose(1, 2, 0)
         depth = depth_p.transpose(1, 2, 0)
-        normal = normal_p.transpose(1, 2, 0)
         
-        fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
+        fig, (ax1, ax2) = plt.subplots(1, 2)
         fig.suptitle(path)
         ax1.axis('off')
         ax1.imshow(left_img)
         ax2.axis('off')
         ax2.imshow(depth)
-        ax3.axis('off')
-        ax3.imshow(normal)
         plt.show()
 
 def save_predictions(predictions, paths):
-    depth_ps, normal_ps = predictions
+    depth_ps = predictions
     depth_ps = depth_ps.cpu().numpy()
-    normal_ps = normal_ps.cpu().numpy()
 
-    for depth_p, normal_p, path in zip(depth_ps, normal_ps, paths):
+    for depth_p, path in zip(depth_ps, paths):
         depth = depth_p.transpose(1, 2, 0)
-        normal = normal_p.transpose(1, 2, 0)
 
-        depth_path = str(Path(path).with_suffix(".depth.exr"))
-        normal_path = str(Path(path).with_suffix(".normal.exr"))
+        depth_path = str(Path(path).with_suffix(".exr"))
 
         cv2.imwrite(depth_path, depth)
-        cv2.imwrite(normal_path, normal)
         
         plt.axis('off')
         plt.imshow(depth)
-        plt.savefig(str(Path(path).with_suffix(".depth.png")))
-        plt.imshow(normal)
-        plt.savefig(str(Path(path).with_suffix(".normal.png")))
+        plt.savefig(str(Path(path).with_suffix(".png")))

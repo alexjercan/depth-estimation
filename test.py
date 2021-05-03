@@ -14,26 +14,21 @@ from tqdm import tqdm
 from metrics import MetricFunction, print_single_error
 from config import parse_test_config, DEVICE, read_yaml_config
 from model import Model, LossFunction
-from general import load_checkpoint
+from general import images_to_device, load_checkpoint
 from dataset import create_dataloader
 
 
 def run_test(model, dataloader, loss_fn, metric_fn):
     loop = tqdm(dataloader, position=0, leave=True)
     
-    for _, (left_img, right_img, left_depth, right_depth, left_normal, right_normal) in enumerate(loop):
+    for _, images in enumerate(loop):
         with torch.no_grad():
-            left_img = left_img.to(DEVICE, non_blocking=True)
-            right_img = right_img.to(DEVICE, non_blocking=True)
-            left_depth = left_depth.to(DEVICE, non_blocking=True)
-            right_depth = right_depth.to(DEVICE, non_blocking=True)
-            left_normal = left_normal.to(DEVICE, non_blocking=True)
-            right_normal = right_normal.to(DEVICE, non_blocking=True)
+            images = images_to_device(images, DEVICE)
+            left_img, right_img, left_depth, _ = images
 
             predictions = model(left_img, right_img)
-            loss_fn(predictions, (left_depth, left_normal))
-            metric_fn.evaluate(predictions, (left_depth, left_normal))
-
+            loss_fn(predictions, left_depth)
+            metric_fn.evaluate(predictions, left_depth)
     loop.close()
 
 
@@ -50,9 +45,7 @@ def test(model=None, config=None):
         additional_targets={
             'right_img': 'image',
             'left_depth': 'depth',
-            'right_depth': 'depth',
-            'left_normal': 'normal',
-            'right_normal': 'normal',
+            'right_depth': 'depth'
         }
     )
 
