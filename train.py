@@ -16,6 +16,7 @@ import my_albumentations as M
 
 from tqdm import tqdm
 from config import parse_test_config, parse_train_config, DEVICE, read_yaml_config
+from metrics import MetricFunction, print_single_error
 from datetime import datetime as dt
 from model import Model, LossFunction
 from test import test
@@ -23,7 +24,7 @@ from general import init_weights, save_checkpoint, load_checkpoint
 from dataset import create_dataloader
 
 
-def train_one_epoch(model, dataloader, loss_fn, solver, epoch_idx):
+def train_one_epoch(model, dataloader, loss_fn, metric_fn, solver, epoch_idx):
     loop = tqdm(dataloader, position=0, leave=True)
 
     for _, (left_img, right_img, left_depth, right_depth, left_normal, right_normal) in enumerate(loop):
@@ -36,6 +37,7 @@ def train_one_epoch(model, dataloader, loss_fn, solver, epoch_idx):
 
         predictions = model(left_img, right_img)
         loss = loss_fn(predictions, (left_depth, left_normal))
+        metric_fn.evaluate(predictions, (left_depth, left_normal))
 
         model.zero_grad()
         loss.backward()
@@ -102,9 +104,11 @@ def train(config=None, config_test=None):
     output_dir = os.path.join(config.OUT_PATH, re.sub("[^0-9a-zA-Z]+", "-", dt.now().isoformat()))
 
     for epoch_idx in range(epoch_idx, config.NUM_EPOCHS):
-        model.train()
+        metric_fn = MetricFunction(config.BATCH_SIZE)
 
-        train_one_epoch(model, dataloader, loss_fn, solver, epoch_idx)
+        model.train()
+        train_one_epoch(model, dataloader, loss_fn, metric_fn, solver, epoch_idx)
+        print_single_error(epoch_idx, loss_fn.show(), metric_fn.show())
         lr_scheduler.step()
 
         if config.TEST:
