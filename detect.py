@@ -18,13 +18,13 @@ from dataset import LoadImages
 
 
 def generatePredictions(model, dataset):
-    for left_img, right_img, path in dataset:
+    for img, left_img, right_img, path in dataset:
         with torch.no_grad():
             left_img = left_img.to(DEVICE, non_blocking=True).unsqueeze(0)
             right_img = right_img.to(DEVICE, non_blocking=True).unsqueeze(0)
 
             predictions = model(left_img, right_img)
-            yield (left_img, right_img), predictions, path
+            yield img, predictions, path
 
 
 def detect(model=None, config=None):
@@ -35,6 +35,7 @@ def detect(model=None, config=None):
     transform = A.Compose(
         [
             A.Resize(height=config.IMAGE_SIZE, width=config.IMAGE_SIZE),
+            A.Normalize(),
             ToTensorV2(),
         ],
         additional_targets={
@@ -50,8 +51,8 @@ def detect(model=None, config=None):
         _, model = load_checkpoint(model, config.CHECKPOINT_FILE, DEVICE)
 
     model.eval()
-    for images, predictions, path in generatePredictions(model, dataset):
-        plot_predictions(images, predictions, [path])
+    for img, predictions, path in generatePredictions(model, dataset):
+        plot_predictions([img], predictions, [path])
         save_predictions(predictions, [path])
 
 

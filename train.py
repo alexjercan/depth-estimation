@@ -67,6 +67,7 @@ def train(config=None, config_test=None):
                 A.IAAEmboss(),
                 A.RandomBrightnessContrast(),            
             ], p=0.3),
+            A.Normalize(),
             M.MyToTensorV2(),
         ],
         additional_targets={
@@ -82,9 +83,12 @@ def train(config=None, config_test=None):
 
     model = Model()
     model.apply(init_weights)
-    solver = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), 
-                              lr=config.LEARNING_RATE, betas=config.BETAS,
-                              eps=config.EPS, weight_decay=config.WEIGHT_DECAY)
+    # solver = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), 
+    #                           lr=config.LEARNING_RATE, betas=config.BETAS,
+    #                           eps=config.EPS, weight_decay=config.WEIGHT_DECAY)
+    solver = torch.optim.SGD(filter(lambda p: p.requires_grad, model.parameters()), 
+                              lr=config.LEARNING_RATE, momentum=config.MOMENTUM,
+                              dampening=config.DAMPENING, weight_decay=config.WEIGHT_DECAY)
     lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(solver, milestones=config.MILESTONES, gamma=config.GAMMA)
     model = model.to(DEVICE)
 
