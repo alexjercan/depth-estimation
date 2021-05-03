@@ -44,15 +44,13 @@ def exr2depth(path, maxvalue=80):
     img[img > maxvalue] = maxvalue
     img = img / maxvalue
 
-    img = np.array(img).astype(np.float32).reshape((img.shape[0], img.shape[1], -1))
-
-    return img
+    return np.array(img).astype(np.float32).reshape((img.shape[0], img.shape[1], -1)) * 2 - 1
 
 
 def plot_predictions(images, predictions, paths):
     depth_ps = predictions
 
-    depth_ps = depth_ps.cpu().numpy()
+    depth_ps = (depth_ps.cpu().numpy() + 1) / 2
 
     for img, depth_p, path in zip(images, depth_ps, paths):
         depth = depth_p.transpose(1, 2, 0)
@@ -67,7 +65,7 @@ def plot_predictions(images, predictions, paths):
 
 def save_predictions(predictions, paths):
     depth_ps = predictions
-    depth_ps = depth_ps.cpu().numpy()
+    depth_ps = (depth_ps.cpu().numpy() + 1) / 2
 
     for depth_p, path in zip(depth_ps, paths):
         depth = depth_p.transpose(1, 2, 0)
