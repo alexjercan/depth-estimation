@@ -48,7 +48,7 @@ class UNetBlockT(nn.Module):
         self.conv2 = nn.Conv2d(output_channel, output_channel, 3, padding=1)
         self.bn2 = nn.GroupNorm(8, output_channel)
         self.conv3 = nn.Conv2d(output_channel, output_channel, 3, padding=1)
-        self.bn3 = nn.GroupNorm(8, output_channel)        
+        self.bn3 = nn.GroupNorm(8, output_channel)
         self.relu = nn.LeakyReLU(0.2, inplace=True)
 
     def forward(self, prev_feature_map, x):
@@ -78,7 +78,7 @@ class UNetFeature(nn.Module):
         self.bn2 = nn.GroupNorm(8, 1024)
         self.mid_conv3 = torch.nn.Conv2d(1024, 1024, 3, padding=1)
         self.bn3 = nn.GroupNorm(8, 1024)
-        
+
         self.relu = nn.LeakyReLU(0.2, inplace=True)
 
     def forward(self, x):
@@ -93,20 +93,20 @@ class UNetFeature(nn.Module):
         x7 = self.relu(self.bn1(self.mid_conv1(x7)))
         x7 = self.relu(self.bn2(self.mid_conv2(x7)))
         x7 = self.relu(self.bn3(self.mid_conv3(x7)))
-        
+
         return x1, x2, x3, x4, x5, x6, x7
-    
-    
+
+
 class UNetFCN(nn.Module):
     def __init__(self, out_channels=3):
-        super(UNetFCN, self).__init__()        
-        self.up_block1 = UNetBlockT(2048, 1024, 512)
+        super(UNetFCN, self).__init__()
+        self.up_block1 = UNetBlockT(1024, 2048, 512)
         self.up_block2 = UNetBlockT(512, 512, 256)
         self.up_block3 = UNetBlockT(256, 256, 128)
         self.up_block4 = UNetBlockT(128, 128, 64)
         self.up_block5 = UNetBlockT(64, 64, 32)
         self.up_block6 = UNetBlockT(32, 32, 16)
-        
+
         self.last_conv1 = nn.Conv2d(16, 16, 3, padding=1)
         self.last_bn = nn.GroupNorm(8, 16)
         self.last_conv2 = nn.Conv2d(16, out_channels, 1, padding=0)
@@ -130,11 +130,11 @@ class Model(nn.Module):
         super().__init__()
         self.feature = UNetFeature()
         self.predict = UNetFCN(out_channels=1)
-    
+
     def forward(self, left_image, right_image):
         featureL = self.feature(left_image)
         featureR = self.feature(right_image)
-        
+
         feature = list(map(lambda x: torch.cat(x, dim=1), zip(featureL, featureR)))
         depth = self.predict(*feature)
 
@@ -145,11 +145,11 @@ class BerHuLoss(nn.Module):
     def __init__(self, threshold=0.2):
         super(BerHuLoss, self).__init__()
         self.threshold = threshold
-    
+
     def forward(self, predictions, targets):
         h = (targets - predictions).abs()
         g = self.threshold * torch.max(h)
-        
+
         loss = torch.where(h <= g, h, h**2)
         return loss.mean()
 
@@ -164,12 +164,12 @@ class LossFunction(nn.Module):
     def forward(self, predictions, targets):
         depth_p = predictions
         depth_gt = targets
-                
+
         depth = self.depth_loss(depth_p, depth_gt) * 1.0
         self.depth_loss_val = depth.item()
 
         return depth
-    
+
     def show(self):
         loss = self.depth_loss_val
         return f'(total:{loss:.4f})'
@@ -177,7 +177,7 @@ class LossFunction(nn.Module):
 
 if __name__ == "__main__":
     left = torch.rand((4, 3, 256, 256))
-    right = torch.rand((4, 3, 256, 256))    
+    right = torch.rand((4, 3, 256, 256))
     model = Model()
     pred = model(left, right)
     assert pred.shape == (4, 1, 256, 256), "Model"
