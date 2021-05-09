@@ -19,8 +19,8 @@ def load_image(path):
     return img
 
 
-def load_depth(path):
-    img = exr2depth(path, maxvalue=10)  # 1 channel depth
+def load_depth(path, max_depth=80):
+    img = exr2depth(path, maxvalue=max_depth)  # 1 channel depth
     assert img is not None, 'Image Not Found ' + path
     return img
 
@@ -54,7 +54,7 @@ def plot_predictions(images, predictions, paths):
 
     for img, depth_p, path in zip(images, depth_ps, paths):
         depth = depth_p.transpose(1, 2, 0)
-        
+
         fig, (ax1, ax2) = plt.subplots(1, 2)
         fig.suptitle(path)
         ax1.axis('off')
@@ -73,7 +73,7 @@ def save_predictions(predictions, paths):
         depth_path = str(Path(path).with_suffix(".exr"))
 
         cv2.imwrite(depth_path, depth)
-        
+
         plt.axis('off')
         plt.imshow(depth)
         plt.savefig(str(Path(path).with_suffix(".png")))

@@ -17,6 +17,7 @@ BATCH_SIZE = 4
 IMAGE_SIZE = 256
 WORKERS = 8
 PIN_MEMORY = True
+MAX_DEPTH = 80
 
 LEARNING_RATE = 0.001
 BETAS = [0.9, 0.999]
@@ -49,6 +50,7 @@ def parse_train_config(config=None):
     c.WORKERS = config.get("WORKERS", WORKERS)
     c.PIN_MEMORY = config.get("PIN_MEMORY", PIN_MEMORY)
     c.SHUFFLE = config.get("SHUFFLE", True)
+    c.MAX_DEPTH = config.get("MAX_DEPTH", MAX_DEPTH)
 
     c.LEARNING_RATE = config.get("LEARNING_RATE", LEARNING_RATE)
     c.MOMENTUM = config.get("MOMENTUM", MOMENTUM)
@@ -56,12 +58,12 @@ def parse_train_config(config=None):
     c.BETAS = config.get("BETAS", BETAS)
     c.EPS = config.get("EPS", EPS)
     c.WEIGHT_DECAY = config.get("WEIGHT_DECAY", WEIGHT_DECAY)
-    
+
     c.MILESTONES = config.get("MILESTONES", MILESTONES)
     c.GAMMA = config.get("GAMMA", GAMMA)
 
     c.NUM_EPOCHS = config.get("NUM_EPOCHS", NUM_EPOCHS)
-    c.TEST = config.get("TEST", TEST) 
+    c.TEST = config.get("TEST", TEST)
     c.OUT_PATH = config.get("OUT_PATH", OUT_PATH)
     c.LOAD_MODEL = config.get("LOAD_MODEL", LOAD_MODEL)
     c.SAVE_MODEL = config.get("SAVE_MODEL", SAVE_MODEL)
@@ -81,6 +83,7 @@ def parse_test_config(config=None):
     c.WORKERS = config.get("WORKERS", WORKERS)
     c.PIN_MEMORY = config.get("PIN_MEMORY", PIN_MEMORY)
     c.SHUFFLE = config.get("SHUFFLE", False)
+    c.MAX_DEPTH = config.get("MAX_DEPTH", MAX_DEPTH)
 
     c.OUT_PATH = config.get("OUT_PATH", OUT_PATH)
     c.LOAD_MODEL = config.get("LOAD_MODEL", True)
@@ -96,7 +99,7 @@ def parse_detect_config(config=None):
     c.JSON = config.get("JSON", JSON)
     c.IMAGE_SIZE = config.get("IMAGE_SIZE", IMAGE_SIZE)
     c.CHECKPOINT_FILE = config.get("CHECKPOINT_FILE", CHECKPOINT_FILE)
-    
+
     return c
 
 

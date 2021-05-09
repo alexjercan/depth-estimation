@@ -20,7 +20,7 @@ from dataset import create_dataloader
 
 def run_test(model, dataloader, loss_fn, metric_fn):
     loop = tqdm(dataloader, position=0, leave=True)
-    
+
     for _, images in enumerate(loop):
         with torch.no_grad():
             images = images_to_device(images, DEVICE)
@@ -52,7 +52,8 @@ def test(model=None, config=None):
 
     _, dataloader = create_dataloader(config.DATASET_ROOT, config.JSON_PATH,
                                       batch_size=config.BATCH_SIZE, transform=transform,
-                                      workers=config.WORKERS, pin_memory=config.PIN_MEMORY, shuffle=config.SHUFFLE)
+                                      workers=config.WORKERS, pin_memory=config.PIN_MEMORY,
+                                      shuffle=config.SHUFFLE, max_depth=config.MAX_DEPTH)
 
     if not model:
         model = Model()

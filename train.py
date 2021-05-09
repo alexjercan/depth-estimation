@@ -79,7 +79,8 @@ def train(config=None, config_test=None):
 
     _, dataloader = create_dataloader(config.DATASET_ROOT, config.JSON_PATH,
                                       batch_size=config.BATCH_SIZE, transform=transform,
-                                      workers=config.WORKERS, pin_memory=config.PIN_MEMORY, shuffle=config.SHUFFLE)
+                                      workers=config.WORKERS, pin_memory=config.PIN_MEMORY,
+                                      shuffle=config.SHUFFLE, max_depth=config.MAX_DEPTH)
 
     model = Model()
     model.apply(init_weights)
