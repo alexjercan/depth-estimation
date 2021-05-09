@@ -44,9 +44,9 @@ def train_one_epoch(model, dataloader, loss_fn, metric_fn, solver, epoch_idx):
 
 def train(config=None, config_test=None):
     torch.backends.cudnn.benchmark = True
-    
+
     config = parse_train_config() if not config else config
-    
+
     transform = A.Compose(
         [
             M.MyRandomResizedCrop(width=config.IMAGE_SIZE, height=config.IMAGE_SIZE),
@@ -65,7 +65,7 @@ def train(config=None, config_test=None):
             A.OneOf([
                 A.IAASharpen(),
                 A.IAAEmboss(),
-                A.RandomBrightnessContrast(),            
+                A.RandomBrightnessContrast(),
             ], p=0.3),
             A.Normalize(),
             M.MyToTensorV2(),
@@ -77,16 +77,13 @@ def train(config=None, config_test=None):
         }
     )
 
-    _, dataloader = create_dataloader(config.DATASET_ROOT, config.JSON_PATH, 
-                                      batch_size=config.BATCH_SIZE, transform=transform, 
+    _, dataloader = create_dataloader(config.DATASET_ROOT, config.JSON_PATH,
+                                      batch_size=config.BATCH_SIZE, transform=transform,
                                       workers=config.WORKERS, pin_memory=config.PIN_MEMORY, shuffle=config.SHUFFLE)
 
     model = Model()
     model.apply(init_weights)
-    # solver = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), 
-    #                           lr=config.LEARNING_RATE, betas=config.BETAS,
-    #                           eps=config.EPS, weight_decay=config.WEIGHT_DECAY)
-    solver = torch.optim.SGD(filter(lambda p: p.requires_grad, model.parameters()), 
+    solver = torch.optim.SGD(filter(lambda p: p.requires_grad, model.parameters()),
                               lr=config.LEARNING_RATE, momentum=config.MOMENTUM,
                               dampening=config.DAMPENING, weight_decay=config.WEIGHT_DECAY)
     lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(solver, milestones=config.MILESTONES, gamma=config.GAMMA)
@@ -123,7 +120,7 @@ if __name__ == "__main__":
     parser.add_argument('--train', type=str, default="train.yaml", help='train config file')
     parser.add_argument('--test', type=str, default="test.yaml", help='test config file')
     opt = parser.parse_args()
-    
+
     config_train = parse_train_config(read_yaml_config(opt.train))
     config_test = parse_test_config(read_yaml_config(opt.test))
 
