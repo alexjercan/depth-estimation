@@ -60,7 +60,6 @@ def train(config=None, config_test=None):
             A.OneOf([
                 M.MyOpticalDistortion(p=0.3),
                 M.MyGridDistortion(p=0.1),
-                M.MyIAAPiecewiseAffine(p=0.3),
             ], p=0.2),
             A.OneOf([
                 A.IAASharpen(),

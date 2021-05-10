@@ -33,25 +33,18 @@ class MyVerticalFlip(A.VerticalFlip):
 class MyRandomResizedCrop(A.RandomResizedCrop):
     @property
     def targets(self):
-        return dict(super().targets, **{'depth': self.apply, 'normal': self.apply})
+        return dict(super().targets, **{'depth': self.apply_to_mask, 'normal': self.apply_to_mask})
 
 
 class MyOpticalDistortion(A.OpticalDistortion):
     @property
     def targets(self):
-        return dict(super().targets, **{'depth': self.apply, 'normal': self.apply})
-
+        return dict(super().targets, **{'depth': self.apply_to_mask, 'normal': self.apply_to_mask})
 
 class MyGridDistortion(A.GridDistortion):
     @property
     def targets(self):
-        return dict(super().targets, **{'depth': self.apply, 'normal': self.apply})
-
-
-class MyIAAPiecewiseAffine(A.IAAPiecewiseAffine):
-    @property
-    def targets(self):
-        return dict(super().targets, **{'depth': self.apply, 'normal': self.apply})
+        return dict(super().targets, **{'depth': self.apply_to_mask, 'normal': self.apply_to_mask})
 
 
 class MyToTensorV2(ToTensorV2):

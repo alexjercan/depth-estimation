@@ -138,7 +138,6 @@ if __name__ == "__main__":
             A.OneOf([
                 M.MyOpticalDistortion(p=0.3),
                 M.MyGridDistortion(p=0.1),
-                M.MyIAAPiecewiseAffine(p=0.3),
             ], p=0.2),
             A.OneOf([
                 A.IAASharpen(),
