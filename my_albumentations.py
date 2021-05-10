@@ -16,7 +16,7 @@ class MyHorizontalFlip(A.HorizontalFlip):
 
     def apply_normal(self, img, **params):
         # when flipping horizontally the normal map should be inversed on the x axis
-        img[:, :, 0] = -1 * img[:, :, 0] + 1
+        img[:, :, 0] = -1 * img[:, :, 0]
         return super().apply(img, **params)
 
 
@@ -26,7 +26,7 @@ class MyVerticalFlip(A.VerticalFlip):
         return dict(super().targets, **{'depth': self.apply, 'normal': self.apply_normal})
 
     def apply_normal(self, img, **params):
-        img[:, :, 1] = -1 * img[:, :, 1] + 1  # y axis flip for normal maps
+        img[:, :, 1] = -1 * img[:, :, 1]  # y axis flip for normal maps
         return super().apply(img, **params)
 
 
