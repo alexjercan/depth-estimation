@@ -48,6 +48,9 @@ def exr2depth(path, maxvalue=80):
 
 
 def plot_predictions(images, predictions, paths):
+    plt.rcParams['figure.figsize'] = [12, 8]
+    plt.rcParams['figure.dpi'] = 200
+
     depth_ps = predictions
 
     depth_ps = (depth_ps.cpu().numpy() + 1) / 2
@@ -64,6 +67,9 @@ def plot_predictions(images, predictions, paths):
         plt.show()
 
 def save_predictions(predictions, paths):
+    plt.rcParams['figure.figsize'] = [12, 8]
+    plt.rcParams['figure.dpi'] = 200
+
     depth_ps = predictions
     depth_ps = (depth_ps.cpu().numpy() + 1) / 2
 
