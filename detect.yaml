@@ -1,3 +1,21 @@
-JSON: [{"imageL": "data/left.png", "imageR": "data/right.png", "output": "data/output.exr"}]
+JSON:
+  [
+    {
+      "imageL": "data/0000L.png",
+      "imageR": "data/0000R.png",
+      "output": "data/out/0000.exr",
+    },
+    {
+      "imageL": "data/0001L.png",
+      "imageR": "data/0001R.png",
+      "output": "data/out/0001.exr",
+    },
+    {
+      "imageL": "data/0002L.png",
+      "imageR": "data/0002R.png",
+      "output": "data/out/0002.exr",
+    }
+
+  ]
 IMAGE_SIZE: 256
 CHECKPOINT_FILE: "normal.pth"
