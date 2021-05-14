@@ -115,6 +115,7 @@ class LoadImages():
 
 if __name__ == "__main__":
     from config import JSON, IMAGE_SIZE
+    import cv2
     import albumentations as A
     import my_albumentations as M
     import matplotlib.pyplot as plt
@@ -156,13 +157,13 @@ if __name__ == "__main__":
 
     img_transform = A.Compose(
         [
+            A.LongestMaxSize(max_size=IMAGE_SIZE),
+            A.PadIfNeeded(min_height=IMAGE_SIZE, min_width=IMAGE_SIZE, border_mode=cv2.BORDER_CONSTANT, value=0),
             A.Normalize(),
             M.MyToTensorV2(),
         ],
         additional_targets={
             'right_img': 'image',
-            'left_depth': 'depth',
-            'right_depth': 'depth',
         }
     )
 
@@ -175,7 +176,6 @@ if __name__ == "__main__":
 
     dataset = LoadImages(JSON, transform=img_transform)
     img, left_img, right_img, path = next(iter(dataset))
-    assert img.shape == (256, 256, 3), f"dataset error {img.shape}"
     assert left_img.shape == (3, 256, 256), f"dataset error {left_img.shape}"
     assert right_img.shape == (3, 256, 256), f"dataset error {right_img.shape}"
 

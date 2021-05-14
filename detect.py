@@ -33,17 +33,17 @@ def detect(model=None, config=None):
 
     config = parse_detect_config() if not config else config
 
-    transform =  A.Compose(
+    transform = A.Compose(
         [
             A.LongestMaxSize(max_size=config.IMAGE_SIZE),
             A.PadIfNeeded(min_height=config.IMAGE_SIZE, min_width=config.IMAGE_SIZE, border_mode=cv2.BORDER_CONSTANT, value=0),
             A.Normalize(),
             M.MyToTensorV2(),
         ],
-    additional_targets={
-        'right_img': 'image',
-    }
-)
+        additional_targets={
+            'right_img': 'image',
+        }
+    )
 
     dataset = LoadImages(config.JSON, transform=transform)
 
