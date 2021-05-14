@@ -20,24 +20,27 @@ class MetricFunction():
     def evaluate(self, predictions, targets):
         depth_p = predictions
         depth_gt = targets
-        
+
         error_val = evaluate_error_depth(depth_p, depth_gt)
-        
+
         self.total_size += self.batch_size
         self.error_avg = avg_error(self.error_sum, error_val, self.total_size, self.batch_size)
         return self.error_avg
-    
+
     def show(self):
-        error = self.error_avg
-        format_str = ('======DEPTH=======\nMSE=%.4f\tRMSE=%.4f\tMAE=%.4f\tABS_REL=%.4f\nDELTA1.02=%.4f\tDELTA1.05=%.4f\tDELTA1.10=%.4f\nDELTA1.25=%.4f\tDELTA1.25^2=%.4f\tDELTA1.25^3=%.4f')
-        return format_str % (error['D_MSE'], error['D_RMSE'], error['D_MAE'],  error['D_ABS_REL'], \
-                         error['D_DELTA1.02'], error['D_DELTA1.05'], error['D_DELTA1.10'], \
-                         error['D_DELTA1.25'], error['D_DELTA1.25^2'], error['D_DELTA1.25^3'])
+        try:
+            error = self.error_avg
+            format_str = ('======DEPTH=======\nMSE=%.4f\tRMSE=%.4f\tMAE=%.4f\tABS_REL=%.4f\nDELTA1.02=%.4f\tDELTA1.05=%.4f\tDELTA1.10=%.4f\nDELTA1.25=%.4f\tDELTA1.25^2=%.4f\tDELTA1.25^3=%.4f')
+            return format_str % (error['D_MSE'], error['D_RMSE'], error['D_MAE'],  error['D_ABS_REL'], \
+                            error['D_DELTA1.02'], error['D_DELTA1.05'], error['D_DELTA1.10'], \
+                            error['D_DELTA1.25'], error['D_DELTA1.25^2'], error['D_DELTA1.25^3'])
+        except:
+            return "======DEPTH=======\nerror"
 
 
 def evaluate_error_depth(pred_depth, gt_depth):
     # for numerical stability
-    depth_mask = gt_depth>0.0001
+    depth_mask = gt_depth>1e-8
     batch_size = gt_depth.size(0)
     error = {}
     _pred_depth = pred_depth[depth_mask]
