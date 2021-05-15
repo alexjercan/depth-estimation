@@ -66,12 +66,13 @@ def plot_predictions(images, predictions, paths):
         ax2.imshow(depth)
         plt.show()
 
-def save_predictions(predictions, paths):
+def save_predictions(predictions, paths, max_depth=80):
     plt.rcParams['figure.figsize'] = [12, 8]
     plt.rcParams['figure.dpi'] = 200
 
     depth_ps = predictions
     depth_ps = (depth_ps.cpu().numpy() + 1) / 2
+    depth_ps = depth_ps * max_depth
 
     for depth_p, path in zip(depth_ps, paths):
         depth = depth_p.transpose(1, 2, 0)
