@@ -55,7 +55,7 @@ def detect(model=None, config=None):
     model.eval()
     for img, predictions, path in generatePredictions(model, dataset):
         plot_predictions([img], predictions, [path])
-        save_predictions(predictions, [path])
+        save_predictions([img], predictions, [path])
 
 
 if __name__ == "__main__":

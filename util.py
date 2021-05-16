@@ -8,6 +8,7 @@
 import os
 import cv2
 import numpy as np
+import albumentations as A
 import matplotlib.pyplot as plt
 
 from pathlib import Path
@@ -57,6 +58,9 @@ def plot_predictions(images, predictions, paths):
 
     for img, depth_p, path in zip(images, depth_ps, paths):
         depth = depth_p.transpose(1, 2, 0)
+        m = max(img.shape[:-1])
+        depth = A.resize(depth, width=m, height=m, interpolation=cv2.INTER_NEAREST)
+        depth = A.center_crop(depth, *img.shape[:-1])
 
         fig, (ax1, ax2) = plt.subplots(1, 2)
         fig.suptitle(path)
@@ -66,7 +70,7 @@ def plot_predictions(images, predictions, paths):
         ax2.imshow(depth)
         plt.show()
 
-def save_predictions(predictions, paths, max_depth=80):
+def save_predictions(images, predictions, paths, max_depth=80):
     plt.rcParams['figure.figsize'] = [12, 8]
     plt.rcParams['figure.dpi'] = 200
 
@@ -74,8 +78,11 @@ def save_predictions(predictions, paths, max_depth=80):
     depth_ps = (depth_ps.cpu().numpy() + 1) / 2
     depth_ps = depth_ps * max_depth
 
-    for depth_p, path in zip(depth_ps, paths):
+    for img, depth_p, path in zip(images, depth_ps, paths):
         depth = depth_p.transpose(1, 2, 0)
+        m = max(img.shape[:-1])
+        depth = A.resize(depth, width=m, height=m, interpolation=cv2.INTER_NEAREST)
+        depth = A.center_crop(depth, *img.shape[:-1])
 
         depth_path = str(Path(path).with_suffix(".exr"))
 
