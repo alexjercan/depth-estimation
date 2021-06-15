@@ -7,6 +7,7 @@
 # - https://web.eecs.umich.edu/~fouhey/2016/evalSN/evalSN.html
 #
 
+from util import plot_predictions
 import torch
 
 
@@ -39,6 +40,9 @@ class MetricFunction():
 
 
 def evaluate_error_depth(pred_depth, gt_depth):
+    pred_depth = (pred_depth + 1) / 2.0
+    gt_depth = (gt_depth + 1) / 2.0
+
     # for numerical stability
     depth_mask = gt_depth>1e-8
     batch_size = gt_depth.size(0)

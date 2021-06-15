@@ -6,6 +6,7 @@
 #
 
 import os
+import glob
 import json
 from copy import copy
 
@@ -15,6 +16,14 @@ from util import load_depth, load_image
 
 def create_dataloader(dataset_root, json_path, batch_size=2, transform=None, workers=8, pin_memory=True, shuffle=True, max_depth=80):
     dataset = BDataset(dataset_root, json_path, transform=transform, max_depth=max_depth)
+    batch_size = min(batch_size, len(dataset))
+    nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, workers])
+    dataloader = DataLoader(dataset, batch_size=batch_size, num_workers=nw, pin_memory=pin_memory, shuffle=shuffle)
+    return dataset, dataloader
+
+
+def create_dataloader_driving(dataset_root, batch_size=2, transform=None, workers=8, pin_memory=True, shuffle=True):
+    dataset = DrivingStereoDataset(dataset_root, transform=transform)
     batch_size = min(batch_size, len(dataset))
     nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, workers])
     dataloader = DataLoader(dataset, batch_size=batch_size, num_workers=nw, pin_memory=pin_memory, shuffle=shuffle)
@@ -65,6 +74,50 @@ class BDataset(Dataset):
             right_depth = augmentations["right_depth"]
 
         return left_img, right_img, left_depth, right_depth
+
+
+class DrivingStereoDataset(Dataset):
+    def __init__(self, dataset_root, transform=None):
+        super(DrivingStereoDataset, self).__init__()
+        self.dataset_root = dataset_root
+        self.transform = transform
+
+        self.left_imgs = glob.glob(os.path.join(dataset_root, "image_L", "*.png"))
+        self.right_imgs = glob.glob(os.path.join(dataset_root, "image_R", "*.png"))
+        self.depths = glob.glob(os.path.join(dataset_root, "disparity", "*.png"))
+
+    def __len__(self):
+        return len(self.depths)
+
+    def __getitem__(self, index):
+        data = self.__load__(index)
+        data = self.__transform__(data)
+        return data
+
+    def __load__(self, index):
+        left_img_path = self.left_imgs[index]
+        right_img_path = self.right_imgs[index]
+        depth_path = self.depths[index]
+
+        left_img = load_image(left_img_path)
+        right_img = load_image(right_img_path)
+        depth = load_image(depth_path)[:, :, 0] / 255.0 * 2 - 1
+
+        return left_img, right_img, depth
+
+    def __transform__(self, data):
+        left_img, right_img, depth = data
+
+        if self.transform is not None:
+            augmentations = self.transform(image=left_img, right_img=right_img,
+                                           left_depth=depth)
+
+            left_img = augmentations["image"]
+            right_img = augmentations["right_img"]
+            depth = augmentations["left_depth"]
+
+        return left_img, right_img, depth, depth
+
 
 class LoadImages():
     def __init__(self, json_data, transform=None):

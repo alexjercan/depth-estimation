@@ -36,6 +36,12 @@ class MyRandomResizedCrop(A.RandomResizedCrop):
         return dict(super().targets, **{'depth': self.apply_to_mask, 'normal': self.apply_to_mask})
 
 
+class MyResize(A.Resize):
+    @property
+    def targets(self):
+        return dict(super().targets, **{'depth': self.apply_to_mask, 'normal': self.apply_to_mask})
+
+
 class MyOpticalDistortion(A.OpticalDistortion):
     @property
     def targets(self):
